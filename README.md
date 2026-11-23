@@ -49,3 +49,7 @@ Yes/no polls and check-in/out presence are sent to currently connected channel p
 
 ## Local outgoing voice effects (v41)
 Normal (default), deep, high, robot and radio process the microphone locally before outgoing live audio. No server processing or audio upload service. Deep/high use two overlapping delay grains in a ScriptProcessor fallback, with roughly 50-100ms processing latency and possible artifacts. Robot uses ring modulation, radio uses filters and soft distortion. Not identity protection, not impersonation models, no voice cloning. Normal bypasses effects; choose it on older devices if audio crackles. Receiver-side Radio FX remains a separate listening effect.
+
+
+## Creation options (v42)
+Event staff, work crew, family/friends, volunteer, RP server, other presets with name/password, a 300-character purpose/rules note, a creator-only client gate, local expiry and device mute-on-join. RP is fictional only, suggested channel names are not game/server integrations. Create one channel at a time. Creator-only talk is a client-side courtesy gate, not secure media authorization; modified clients bypass it. Local expiry hides/stops joins in this app, not hard deletion or remote revocation. Metadata and other peers/recordings are not deleted. Rules/options are stored as channel metadata, not audio. Mute-on-join is this device's preference, reversible in the channel.
