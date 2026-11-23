@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Username registry: one doc per normalized radio name.
+    match /usernames/{name} {
+      allow get, list: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'createdAt']);
+      allow update, delete: if false;
+    }
+    // Channel ownership records. Private (password) channels can be read by
+    // exact id only; list queries never return them (client queries prot==false).
+    match /channels/{id} {
+      allow get: if request.auth != null;
+      allow list: if request.auth != null && resource.data.prot == false;
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['name', 'cat', 'prot', 'ownerUid', 'ownerName', 'createdAt', 'banned']);
+      allow update: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+      allow delete: if false;
+    }
+    // Agency access requests. One pending request per agency (deterministic doc
+    // id). Clients can only create pending requests and read approved ones; the
+    // queue itself is reviewed in the console by the project owner, whose edits
+    // bypass these rules.
+    match /agency_requests/{id} {
+      allow create: if request.auth != null
+        && !exists(/databases/$(database)/documents/agency_requests/$(id))
+        && request.resource.data.status == 'pending'
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['type', 'typeLabel', 'agency', 'name', 'role', 'email', 'phone', 'website', 'status', 'uid', 'ts']);
+      allow get, list: if request.auth != null && resource.data.status == 'approved';
+      allow update, delete: if false;
+    }
+  }
+}
