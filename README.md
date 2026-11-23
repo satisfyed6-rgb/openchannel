@@ -53,3 +53,7 @@ Normal (default), deep, high, robot and radio process the microphone locally bef
 
 ## Creation options (v42)
 Event staff, work crew, family/friends, volunteer, RP server, other presets with name/password, a 300-character purpose/rules note, a creator-only client gate, local expiry and device mute-on-join. RP is fictional only, suggested channel names are not game/server integrations. Create one channel at a time. Creator-only talk is a client-side courtesy gate, not secure media authorization; modified clients bypass it. Local expiry hides/stops joins in this app, not hard deletion or remote revocation. Metadata and other peers/recordings are not deleted. Rules/options are stored as channel metadata, not audio. Mute-on-join is this device's preference, reversible in the channel.
+
+
+## Press sound restoration (v45)
+Restored existing devices to Original press selection once. The original sfx-press.mp3 asset is unchanged from its first upload. Removed the legacy synthetic fallback that concatenated a data chirp and triple permit beep; if decoding is not ready, play the selected file directly instead. Incoming Clip 4 remains receiver-only. Release Clip 1 remains unchanged.
