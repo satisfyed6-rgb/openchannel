@@ -1,37 +1,69 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Username registry: one doc per normalized radio name.
-    match /usernames/{name} {
-      allow get, list: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'createdAt']);
-      allow update, delete: if false;
-    }
-    // Channel ownership records. Private (password) channels can be read by
-    // exact id only; list queries never return them (client queries prot==false).
-    match /channels/{id} {
-      allow get: if request.auth != null;
-      allow list: if request.auth != null && resource.data.prot == false;
-      allow create: if request.auth != null
-        && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['name', 'cat', 'prot', 'ownerUid', 'ownerName', 'createdAt', 'banned']);
-      allow update: if request.auth != null && request.auth.uid == resource.data.ownerUid;
-      allow delete: if false;
-    }
-    // Agency access requests. One pending request per agency (deterministic doc
-    // id). Clients can only create pending requests and read approved ones; the
-    // queue itself is reviewed in the console by the project owner, whose edits
-    // bypass these rules.
-    match /agency_requests/{id} {
-      allow create: if request.auth != null
-        && !exists(/databases/$(database)/documents/agency_requests/$(id))
-        && request.resource.data.status == 'pending'
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['type', 'typeLabel', 'agency', 'name', 'role', 'email', 'phone', 'website', 'status', 'uid', 'ts']);
-      allow get, list: if request.auth != null && resource.data.status == 'approved';
-      allow update, delete: if false;
-    }
+ match /databases/{database}/documents {
+  function signed(){ return request.auth != null; }
+  function appAdmin(){ return signed() && exists(/databases/$(database)/documents/appAdmins/$(request.auth.uid)); }
+  function member(a){ return signed() && exists(/databases/$(database)/documents/agencies/$(a)/members/$(request.auth.uid)); }
+  function owner(a){ return member(a) && get(/databases/$(database)/documents/agencies/$(a)).data.ownerUid == request.auth.uid; }
+  function validInvite(c,a){
+   let i=get(/databases/$(database)/documents/invites/$(c)).data;
+   let next=getAfter(/databases/$(database)/documents/invites/$(c)).data;
+   return i.agencyId==a && i.revoked==false && i.expiry>request.time && i.uses<i.maxUses
+    && next.uses==i.uses+1 && next.lastUid==request.auth.uid;
   }
+  match /appAdmins/{uid} { allow get: if signed() && request.auth.uid==uid; allow list,write: if false; }
+  match /usernames/{name} {
+   allow get,list: if signed();
+   allow create: if signed() && request.resource.data.uid==request.auth.uid && request.resource.data.keys().hasOnly(['uid','displayName','createdAt']);
+   allow update,delete: if false;
+  }
+  match /channels/{id} {
+   allow get: if signed();
+   allow list: if signed() && resource.data.prot==false;
+   allow create: if signed() && request.resource.data.ownerUid==request.auth.uid && request.resource.data.keys().hasOnly(['name','cat','prot','ownerUid','ownerName','createdAt','banned']);
+   allow update: if signed() && request.auth.uid==resource.data.ownerUid;
+   allow delete: if false;
+  }
+  match /agency_requests/{id} {
+   allow create: if signed() && request.resource.data.status=='pending' && request.resource.data.uid==request.auth.uid
+    && request.resource.data.keys().hasOnly(['type','typeLabel','agency','name','role','email','phone','website','status','uid','ts']);
+   allow get: if appAdmin() || (signed() && resource.data.uid==request.auth.uid);
+   allow list,update,delete: if appAdmin();
+  }
+  match /agencies/{a} {
+   allow get: if member(a) || appAdmin();
+   allow list: if false;
+   allow create: if appAdmin() && request.resource.data.keys().hasOnly(['name','ownerUid','verified','secret','version','createdAt'])
+    && request.resource.data.verified==true && request.resource.data.secret is string && request.resource.data.secret.size()==64 && request.resource.data.version==1;
+   allow update: if (appAdmin() || owner(a)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['secret','version'])
+    && request.resource.data.secret is string && request.resource.data.secret.size()==64 && request.resource.data.secret!=resource.data.secret && request.resource.data.version==resource.data.version+1;
+   allow delete: if false;
+   match /members/{uid} {
+    allow get: if appAdmin() || owner(a) || (signed() && request.auth.uid==uid);
+    allow list: if appAdmin() || owner(a);
+    allow create: if (appAdmin() && uid==getAfter(/databases/$(database)/documents/agencies/$(a)).data.ownerUid && request.resource.data.role=='admin')
+     || (signed() && uid==request.auth.uid && request.resource.data.role=='member'
+      && request.resource.data.keys().hasOnly(['role','invite','joinedAt']) && validInvite(request.resource.data.invite,a));
+    allow update: if false;
+    allow delete: if (appAdmin() || owner(a)) && uid!=get(/databases/$(database)/documents/agencies/$(a)).data.ownerUid
+     && getAfter(/databases/$(database)/documents/agencies/$(a)).data.version==get(/databases/$(database)/documents/agencies/$(a)).data.version+1
+     && getAfter(/databases/$(database)/documents/agencies/$(a)).data.secret!=get(/databases/$(database)/documents/agencies/$(a)).data.secret;
+   }
+  }
+  match /invites/{code} {
+   allow get: if signed();
+   allow list: if signed() && owner(resource.data.agencyId);
+   allow create: if owner(request.resource.data.agencyId) && code.size()==32
+    && request.resource.data.keys().hasOnly(['agencyId','expiry','maxUses','uses','revoked','lastUid'])
+    && request.resource.data.uses==0 && request.resource.data.revoked==false && request.resource.data.lastUid==''
+    && request.resource.data.maxUses is int && request.resource.data.maxUses>0 && request.resource.data.maxUses<=200
+    && request.resource.data.expiry>request.time && request.resource.data.expiry<request.time+duration.value(31,'d');
+   allow update: if (owner(resource.data.agencyId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked']) && request.resource.data.revoked==true)
+    || (signed() && resource.data.revoked==false && resource.data.expiry>request.time && resource.data.uses<resource.data.maxUses
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses','lastUid']) && request.resource.data.uses==resource.data.uses+1 && request.resource.data.lastUid==request.auth.uid
+     && !exists(/databases/$(database)/documents/agencies/$(resource.data.agencyId)/members/$(request.auth.uid))
+     && getAfter(/databases/$(database)/documents/agencies/$(resource.data.agencyId)/members/$(request.auth.uid)).data.invite==code);
+   allow delete: if false;
+  }
+ }
 }
