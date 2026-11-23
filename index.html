@@ -177,6 +177,8 @@
   .av-grid button{font-size:22px; padding:7px 0; background:var(--panel2); border:1px solid var(--accent); border-radius:10px; cursor:pointer}
 
 .talk-tools{flex-wrap:wrap;justify-content:center;gap:6px}.talk-tools .mini-btn{flex:0 1 auto;padding:10px 8px}
+
+.more-section{margin:12px 0;border:1px solid var(--border);border-radius:14px;background:var(--panel)}.more-section>summary{padding:18px;font-weight:700;font-size:14px;cursor:pointer}.more-section>.card{margin:0;border:0;border-top:1px solid var(--border);border-radius:0 0 14px 14px}#chanView .feed:empty{display:none}#chanView .talkbar{padding-top:22px}#chanView .ptt{width:210px;height:210px}#channelRules:empty{display:none}#usersPanel summary{cursor:pointer}#chanView .foot{font-size:10px}#chanView .talk-tools.hidden{display:none}
 </style>
 </head>
 <body>
@@ -191,7 +193,7 @@
   <div id="homeView">
     <!-- Channels tab -->
     <div class="tabpane" id="tabChannels">
-      <div class="head-row"><h1>Join or create</h1><button class="plusbtn" id="plusBtn" type="button" title="Create or add a channel">+</button></div>
+      <div class="head-row"><h1>Channels</h1><button class="plusbtn" id="plusBtn" type="button" title="Create or add a channel">+</button></div>
       <div class="card" style="margin-top:8px"><button class="big-act" id="homeInstall" style="width:100%">Install as app</button><p class="sub" id="installHelp" style="margin:8px 0 0">Free. Open from your home screen, no app store needed. On iPhone: Share, then Add to Home Screen.</p></div>
       <div class="row" style="gap:8px"><button class="big-act alt" id="homeJoin">Join a channel</button><button class="big-act" id="homeCreate">Create a channel</button></div>
       <button class="chan-item" id="homeEvent" style="margin-top:12px"><span class="ci">E</span><span><span class="cn">Event staff</span><br><span class="cd">Your crew, your channel. No agency signup.</span></span><span class="arr">›</span></button>
@@ -261,7 +263,7 @@
 
     <!-- Settings tab -->
     <div class="tabpane hidden" id="tabSettings">
-      <div class="head-row"><h1>Settings</h1></div>
+      <div class="head-row"><h1>More</h1></div><p class="sub">Your profile, sounds and app options.</p>
       <div class="card">
         <div class="sec-label" style="margin-top:0">Your radio name</div>
         <input type="text" id="nickInput" maxlength="20" placeholder="e.g. Unit 12" autocomplete="off">
@@ -308,7 +310,7 @@
         <button class="bn-btn sel" data-tab="Channels" type="button"><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>Channels</button>
         <button class="bn-btn" data-tab="Contacts" type="button"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.6 14.2c2.2.4 4 1.9 4.9 4.8"/></svg>Contacts</button>
         <button class="bn-btn" data-tab="Town" style="display:none" type="button"><svg viewBox="0 0 24 24"><path d="M12 2.5v3.5"/><path d="M9.5 6L12 3.5 14.5 6"/><path d="M6 21l6-12 6 12"/><path d="M8.2 15.5h7.6"/><path d="M4 21h16"/></svg>Town</button>
-        <button class="bn-btn" data-tab="Settings" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>Settings</button>
+        <button class="bn-btn" data-tab="Settings" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>More</button>
       </div>
     </nav>
   </div>
@@ -344,10 +346,10 @@
 
     <p class="sub" id="channelRules" style="padding:0 14px"></p><div class="lcd"><span class="led" id="led"></span><span id="lcdStatus">connecting…</span></div>
 
-    <div class="card users" id="usersPanel">
-      <div class="sec-label" style="margin-top:0">On this channel (<span id="usersCount">1</span>)</div>
+    <details class="card users" id="usersPanel">
+      <summary style="font-size:13px">People here (<span id="usersCount">1</span>)</summary>
       <div id="users"></div>
-    </div>
+    </details>
 
     <div class="feed" id="feed"></div>
 
@@ -359,7 +361,7 @@
     <div class="talkbar">
       <button class="ptt" id="ptt" type="button">TALK</button>
       <div class="ptt-hint" id="pttHint">Hold to talk (or hold spacebar).</div>
-      <div class="talk-tools">
+      <button class="mini-btn" id="channelMoreBtn" type="button" style="padding:12px 28px;margin-top:12px">More options</button><div class="talk-tools hidden" id="channelTools">
         <button class="mini-btn" id="joinMuteBtn" type="button">Incoming: on</button><button class="mini-btn" id="textBtn" type="button">Text</button>
         <button class="mini-btn" id="codesBtn" type="button">10-codes</button>
         <button class="mini-btn" id="tapBtn" type="button">Lock: off</button>
@@ -459,7 +461,7 @@
   <p class="sub" id="ownerMsg"></p>
 </dialog>
 
-<dialog id="replayNotice"><h1 style="font-size:18px">Voice can be saved by listeners</h1><p class="sub">Incoming transmissions are saved locally for replay, up to 20 per channel on each listener's device. Nothing is uploaded as a recording. Busy mode mutes live voice and keeps a listen-later queue while connected. You can turn saving off and delete your copies, but cannot delete copies on other devices. Do not share sensitive information.</p><p class="sub">Recordings are limited to 60 seconds each. Browser storage may be cleared or fail. Legacy clients are not recorded by this version.</p><button class="big-act" id="replayAgree">Understand &amp; join</button><button class="mini-btn" id="replayCancel">Cancel</button></dialog><dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Listeners may save incoming voice locally for replay. No recordings are uploaded. Your microphone stays muted between transmissions. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
+<dialog id="replayNotice"><h1 style="font-size:18px">Before you join</h1><p class="sub">1. Choose a channel or create your own.<br>2. Hold TALK to speak, let go to listen.<br>3. Allow the mic to talk, or choose Listen only.</p><h2 style="font-size:15px">Listeners can save voice</h2><p class="sub">Incoming transmissions are saved locally for replay, up to 20 per channel on each listener's device. Nothing is uploaded as a recording. Busy mode mutes live voice and keeps a listen-later queue while connected. You can turn saving off and delete your copies, but cannot delete copies on other devices. Do not share sensitive information.</p><p class="sub">Recordings are limited to 60 seconds each. Browser storage may be cleared or fail. Legacy clients are not recorded by this version.</p><button class="big-act" id="replayAgree">Got it, join channel</button><button class="mini-btn" id="replayCancel">Cancel</button></dialog><dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Listeners may save incoming voice locally for replay. No recordings are uploaded. Your microphone stays muted between transmissions. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1538,6 +1540,7 @@ tabRp.onclick=function(){ codesMode='rp'; renderCodes(); };
 allCodesBtn.onclick=function(){ codesAllOpen=!codesAllOpen; renderCodes(); };
 renderCodes();
 el('joinMuteBtn').onclick=function(){if(!channel)return;var m=!load('joinMuted:'+channel.id,false);save('joinMuted:'+channel.id,m);el('joinMuteBtn').textContent=m?'Incoming: muted':'Incoming: on';conns.forEach(function(u){if(u.audioGain)u.audioGain.gain.value=(!busyAudio()&&u.talking&&!u.muted)?1:0;if(u.audioEl)u.audioEl.muted=busyAudio()||u.muted||!u.talking;});};
+el('channelMoreBtn').onclick=function(){var open=el('channelTools').classList.contains('hidden');['channelTools','teamTools','replayPanel'].forEach(function(id){el(id).classList.toggle('hidden',!open);});el('channelMoreBtn').textContent=open?'Fewer options':'More options';if(hasMod())el('adminPanel').classList.toggle('hidden',!open);};
 var textBtn=el('textBtn'), textRow=el('textRow'), chatInput=el('chatInput'), chatSend=el('chatSend');
 textBtn.onclick=function(){
   textRow.classList.toggle('hidden');
@@ -1651,6 +1654,7 @@ function startJoin(chan, preclaimed){
 }
 function proceedJoin(chan, preclaimed){
   channel=chan;
+  ['channelTools','teamTools','replayPanel'].forEach(function(id){el(id).classList.add('hidden');});el('channelMoreBtn').textContent='More options';
   if(chan.options&&chan.options.expires){setTimeout(function(){if(channel&&channel.id===chan.id){leaveChannel();toast('Local channel expiry reached. Not a remote deletion.');}},Math.min(2147483647,Math.max(0,chan.options.expires-Date.now())));}
   el('channelRules').textContent=(chan.cat==='rp'?'FICTIONAL ROLEPLAY ONLY. ':'')+(chan.options&&chan.options.rules||'')+(chan.options&&chan.options.talk==='owner'?' Creator-only talk: client-side gate, not secure.':'');
   replayRender();toolRender();el('joinMuteBtn').textContent=load('joinMuted:'+chan.id,false)?'Incoming: muted':'Incoming: on';
@@ -1695,7 +1699,7 @@ function joined(p,slot){
   buzz(25);
   feedSys('You joined <b>'+esc(channel.name)+'</b> as <b>'+esc(myName)+'</b>'+(offline?' (offline demo)':''));
   refreshFloorUI(); renderUsers();
-  if(hasMod()){ announceOwner(); renderAdmin(); adminPanel.classList.remove('hidden'); }
+  if(hasMod()){ announceOwner(); renderAdmin(); adminPanel.classList.add('hidden'); }
   if(channel.user&&!channel.prot&&channel.cat!=='dm'&&!channel.agencyId) startAdvertising();
   scan();
   channelScanTimer=setInterval(scan,25000);
@@ -1876,17 +1880,17 @@ function handleData(from,d,conn){
 /* ---------- floor / TX ---------- */
 function refreshFloorUI(){
   if(networkDown){setStatus('CONNECTION LOST — reconnecting');ptt.disabled=true;pttHint.textContent='Check your network. Reconnect attempts are limited.';return;}
-  if(tx){ led.className='led tx'; setStatus('TRANSMITTING'); ptt.classList.add('tx'); return; }
+  if(tx){ led.className='led tx'; setStatus('Talking'); ptt.classList.add('tx'); return; }
   ptt.classList.remove('tx');
   if(floorHolder){ led.className='led rx'; setStatus(floorName+(floorIsDsp?' (dispatcher)':'')+' is talking'); }
-  else{ led.className='led'; setStatus(locked?'CHANNEL LOCKED':'ON NET — '+(visCount())+' here'); }
+  else{ led.className='led'; setStatus(locked?'Channel locked':'Ready to talk'); }
   var busy=!!floorHolder||locked||(Date.now()<adminMutedUntil);
   ptt.disabled=busy&&!tx;
   lockMark.classList.toggle('hidden', !locked);
   if(Date.now()<adminMutedUntil) pttHint.textContent='You were muted by the owner (10 min).';
   else if(locked&&!hasMod()) pttHint.textContent='Channel locked by owner. Listen only.';
   else if(floorHolder) pttHint.textContent=floorName+' is talking. Wait for the click.';
-  else pttHint.textContent='Hold to talk (or hold spacebar).';
+  else pttHint.textContent='Hold TALK to speak. Let go to listen.';
   usersCount.textContent=(visCount());
 }
 function startLiveRow(name){ endLiveRow(); liveFeedRow=feedVoice({name:name,live:true}); }
@@ -2153,7 +2157,7 @@ ownerGo.onclick=function(){
       reports=load('reports',[]);
       if(channel){ bans=load('bans:'+channel.id,bans); announceOwner(); }
       renderUsers(); renderAdmin(); refreshFloorUI();
-      adminPanel.classList.remove('hidden');
+      adminPanel.classList.toggle('hidden',el('channelTools').classList.contains('hidden'));
       toast('Owner controls unlocked');
     } else {
       ownerMsg.textContent='Wrong code.';
@@ -2308,6 +2312,8 @@ dspBtn.onclick=function(){
   feedSys('Dispatcher mode '+(dispatcher?'on':'off'));
 };
 
+/* Simple default views; advanced features remain one tap away. */
+(function(){var pane=el('tabSettings'),cards=Array.prototype.slice.call(pane.children).filter(function(n){return n.classList.contains('card');}),labels=['Profile & status','Voice changer','Sounds','Official agencies','Install & owner options'];cards.forEach(function(card,i){var d=document.createElement('details');d.className='more-section';var sm=document.createElement('summary');sm.textContent=labels[i]||'App options';d.appendChild(sm);card.parentNode.insertBefore(d,card);d.appendChild(card);});})();
 /* ---------- install as app (PWA) ---------- */
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 el('homeInstall').onclick=function(){installBtn.click();};
