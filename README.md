@@ -7,8 +7,8 @@ used under the Pixabay Content License (https://pixabay.com/service/license-summ
 free to use, commercial use allowed, no attribution required, modification allowed.
 The license does not allow selling or distributing the raw files standalone.
 
-- sfx-beep.mp3: "088524_Walkie Talkie" by freesound_community
-  https://pixabay.com/sound-effects/film-special-effects-088524-walkie-talkie-83500/
+- sfx-beep.mp3: single blip cut from "beep...beep...beep.." by freesound_community
+  https://pixabay.com/sound-effects/film-special-effects-beepbeepbeep-53921/
 - sfx-click.mp3: "Button Click" by ToneMarrow
   https://pixabay.com/sound-effects/film-special-effects-button-click-514785/
 - sfx-tail.mp3 and sfx-static.mp3: "Radio Static" by freesound_community
