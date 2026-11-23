@@ -189,15 +189,18 @@
   <div id="homeView">
     <!-- Channels tab -->
     <div class="tabpane" id="tabChannels">
-      <div class="head-row"><h1>Channels</h1><button class="plusbtn" id="plusBtn" type="button" title="Create or add a channel">+</button></div>
-      <p class="sub">Hold the button, talk. Everything is live &mdash; nothing is recorded.</p>
+      <div class="head-row"><h1>Join or create</h1><button class="plusbtn" id="plusBtn" type="button" title="Create or add a channel">+</button></div>
+      <div class="card" style="margin-top:8px"><button class="big-act" id="homeInstall" style="width:100%">Install as app</button><p class="sub" id="installHelp" style="margin:8px 0 0">Free. Open from your home screen, no app store needed. On iPhone: Share, then Add to Home Screen.</p></div>
+      <div class="row" style="gap:8px"><button class="big-act alt" id="homeJoin">Join a channel</button><button class="big-act" id="homeCreate">Create a channel</button></div>
+      <button class="chan-item" id="homeEvent" style="margin-top:12px"><span class="ci">E</span><span><span class="cn">Event staff</span><br><span class="cd">Your crew, your channel. No agency signup.</span></span><span class="arr">›</span></button>
+      <p class="sub">Hold TALK to speak. Live only, no voice recordings.</p>
       <div class="sec-label">Featured</div>
       <div id="chanList"></div>
       <div class="sec-label">My channels (this device)</div>
       <div id="myChans"><span style="color:var(--dim)">None yet &mdash; tap + to create or join.</span></div>
       <div class="sec-label">Online now <button class="mini-btn" id="dirRefresh" type="button" style="float:right">Refresh</button></div>
       <div id="dirList"><span style="color:var(--dim)">Checking&hellip;</span></div>
-      <p class="sub" style="font-size:11px; margin-top:8px">No server directory: public channels show here only while someone inside them is online. Password channels and direct contacts are never listed; ask the owner for the name and password.</p>
+      <p class="sub" style="font-size:11px; margin-top:8px">No server directory: public channels show here only while someone inside them is online. Password channels and direct contacts are never listed; ask the owner for the channel ID and password.</p>
       <p class="sub" style="font-size:11px; margin-top:8px">Consumer demo prototype. <b>Not for life-safety or emergency use</b> &mdash; in a real emergency call 911.</p>
     </div>
 
@@ -211,12 +214,14 @@
 
     <!-- Agencies tab -->
     <div class="tabpane hidden" id="tabAgencies">
-      <div class="head-row"><h1>Agencies</h1></div>
-      <p class="sub">Channel sets for volunteer and community agencies. Every request is reviewed by a person before anything goes live.</p>
+      <div class="head-row"><h1>Official agencies</h1></div>
+      <p class="sub">Private, invite-only agency spaces. Verified manually by the app owner, never searchable. Consumer demo, not for emergency use.</p>
       <div class="card">
-        <div class="sec-label" style="margin-top:0">Approved agency networks</div>
+        <div class="sec-label" style="margin-top:0">My agency networks</div>
         <div id="agApproved"><span style="color:var(--dim)">Checking&hellip;</span></div>
       </div>
+      <div class="card"><div class="sec-label" style="margin-top:0">Redeem invitation</div><input id="agInviteCode" placeholder="Invitation code or link" style="width:100%"><button class="mini-btn" id="agRedeem" style="padding:10px;margin-top:8px">Join invited agency</button><p class="sub" id="agAccessMsg"></p><p class="sub">Secret-based live audio, not server-authenticated media. Removing a member rotates the key atomically. Online apps disconnect on the key update, usually within seconds; old or modified peers may keep talking to each other on the old key, but cannot follow the new channel. No audio is recorded.</p></div>
+      <details class="card"><summary>Account and agency admin</summary><p class="sub">Account ID, share with the verifier only:</p><div id="agAccountId" style="overflow-wrap:anywhere;font-size:11px"></div><input id="agLoadId" placeholder="Agency ID (existing members only)" style="width:100%"><button class="mini-btn" id="agLoad">Load my agency</button><div class="row"><input type="number" id="agInviteUses" value="1" min="1" max="200" aria-label="Invite max uses" style="width:45%"><input type="number" id="agInviteDays" value="7" min="1" max="30" aria-label="Invite expiry days" style="width:45%"></div><p class="sub">Invite uses / days until expiry. Limit is per invite, not a hard agency-wide cap.</p><div id="agManage"></div><div id="agVerifyPanel" class="hidden"><h2>App owner verification</h2><p class="sub">Verify the agency out-of-band before submitting.</p><input id="agVerifyName" placeholder="Verified agency name" style="width:100%"><input id="agVerifyUid" placeholder="Owner account ID" style="width:100%"><button id="agVerify" class="mini-btn">Verify and assign owner</button></div></details>
       <div class="card">
         <div class="sec-label" style="margin-top:0">Request an agency channel set</div>
         <p class="sub">Pick your agency type, then tell us who you are. We check every request by hand. Someone will reach out once your verification is complete. Only the head of the agency may apply.</p>
@@ -224,7 +229,7 @@
         <div id="agFormWrap" class="hidden" style="margin-top:10px">
           <div class="sec-label">Requesting as: <span id="agTypeLabel" style="color:var(--lcd-fg)"></span></div>
           <input type="text" id="agAgency" maxlength="48" placeholder="Agency or township name" autocomplete="off" style="width:100%; margin-top:6px">
-          <input type="text" id="agName" maxlength="40" placeholder="Your full name" autocomplete="off" style="width:100%; margin-top:6px">
+          <input type="text" id="agName" maxlength="40" placeholder="Your radio name" autocomplete="off" style="width:100%; margin-top:6px">
           <input type="text" id="agRole" maxlength="40" placeholder="Your role (e.g. Coordinator, Chief)" autocomplete="off" style="width:100%; margin-top:6px">
           <input type="text" id="agEmail" maxlength="60" placeholder="Official email" autocomplete="off" style="width:100%; margin-top:6px">
           <input type="text" id="agPhone" maxlength="24" placeholder="Official phone" autocomplete="off" style="width:100%; margin-top:6px">
@@ -238,7 +243,7 @@
         </div>
         <div id="agDone" class="hidden" style="margin-top:10px">
           <p style="color:var(--lcd-fg); font-weight:700; margin:6px 0">Request received &mdash; pending review.</p>
-          <p class="sub">Someone will reach out once your verification is complete. One request per agency; approved networks appear above when the review finishes.</p>
+          <p class="sub">Someone will reach out once your verification is complete. One request per agency; the verified owner receives access after review. Requests are visible only to the app owner and requester.</p>
         </div>
       </div>
       <p class="sub" style="font-size:11px; margin-top:8px">Demo prototype, not an official service of any agency. For training and drills only. <b>Not for life-safety or emergency use</b> &mdash; in a real emergency call 911. No ID documents or badge numbers are collected; we verify by public records and a call back to the agency.</p>
@@ -270,10 +275,10 @@
       </div>
       <div class="card">
         <div class="sec-label" style="margin-top:0">Sounds</div>
-        <div class="sec-label">Release beep (when you let go)</div>
-        <div class="status-row" id="sndRelRow"></div>
+        <div class="sec-label">Press sound (button down)</div><div class="status-row" id="sndPressRow" style="flex-wrap:wrap"></div><div class="sec-label">Release beep (when you let go)</div>
+        <div class="status-row" id="sndRelRow" style="flex-wrap:wrap"></div>
         <div class="sec-label">Incoming beep (when another unit talks)</div>
-        <div class="status-row" id="sndIncRow"></div>
+        <div class="status-row" id="sndIncRow" style="flex-wrap:wrap"></div>
         <p class="sub" style="margin-top:6px">Tap a sound to pick it and hear it. Defaults: release Clip 1, incoming Clip 4.</p>
       </div>
       <div class="card">
@@ -300,7 +305,7 @@
       <div class="bn-in">
         <button class="bn-btn sel" data-tab="Channels" type="button"><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>Channels</button>
         <button class="bn-btn" data-tab="Contacts" type="button"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.6 14.2c2.2.4 4 1.9 4.9 4.8"/></svg>Contacts</button>
-        <button class="bn-btn" data-tab="Town" type="button"><svg viewBox="0 0 24 24"><path d="M12 2.5v3.5"/><path d="M9.5 6L12 3.5 14.5 6"/><path d="M6 21l6-12 6 12"/><path d="M8.2 15.5h7.6"/><path d="M4 21h16"/></svg>Town</button>
+        <button class="bn-btn" data-tab="Town" style="display:none" type="button"><svg viewBox="0 0 24 24"><path d="M12 2.5v3.5"/><path d="M9.5 6L12 3.5 14.5 6"/><path d="M6 21l6-12 6 12"/><path d="M8.2 15.5h7.6"/><path d="M4 21h16"/></svg>Town</button>
         <button class="bn-btn" data-tab="Settings" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>Settings</button>
       </div>
     </nav>
@@ -397,7 +402,7 @@
   <div class="dlg-head"><h1 style="font-size:16px; margin:0">Add a channel</h1><button class="x-btn" id="addSheetX" type="button">&#10005;</button></div>
   <div class="sheet-act">
     <button class="big-act" id="sheetCreate" type="button">Create a new channel</button>
-    <button class="big-act alt" id="sheetJoin" type="button">Join by name or password</button>
+    <button class="big-act alt" id="sheetJoin" type="button">Join by channel ID</button>
   </div>
 </dialog>
 
@@ -406,14 +411,14 @@
   <input type="text" id="ccName" maxlength="24" placeholder="Channel name (3-24 chars)" autocomplete="off" style="width:100%; margin-top:12px">
   <div class="cat-row" id="ccCats" style="margin-top:10px"></div>
   <input type="password" id="ccPass" maxlength="40" placeholder="Password (optional)" autocomplete="off" style="width:100%; margin-top:10px">
-  <p class="sub" style="font-size:11px; margin-top:6px">A password means only people who know it can find the channel; it is stored as a hash, never as text. OEM / Training channels show everyone the TRAINING ONLY banner. Channel names are unique: the same name always leads to the same channel.</p>
+  <p class="sub" style="font-size:11px; margin-top:6px">A password changes the secret peer-channel address. The password itself is not stored. Anyone given the secret address could connect, so share it carefully. Each new channel has a random ID. Share its ID and, if set, its password. This is secret-based access, not server-authenticated media. Public channels can be discovered; add a strong password for a private crew.</p>
   <div class="row" style="margin-top:10px"><button class="mini-btn on" id="ccGo" type="button" style="flex:1; padding:10px">Create</button></div>
   <p class="sub" id="ccMsg" style="margin-top:6px"></p>
 </dialog>
 
 <dialog id="joinDlg">
   <div class="dlg-head"><h1 style="font-size:16px; margin:0">Join a channel</h1><button class="x-btn" id="joinX" type="button">&#10005;</button></div>
-  <input type="text" id="jcName" maxlength="24" placeholder="Channel name" autocomplete="off" style="width:100%; margin-top:12px">
+  <input type="text" id="jcName" maxlength="60" placeholder="Channel ID (OC-...) or legacy name" autocomplete="off" style="width:100%; margin-top:12px">
   <input type="password" id="jcPass" maxlength="40" placeholder="Password (if the channel has one)" autocomplete="off" style="width:100%; margin-top:10px">
   <div class="row" style="margin-top:10px"><button class="mini-btn on" id="jcGo" type="button" style="flex:1; padding:10px">Join</button></div>
   <p class="sub" id="jcMsg" style="margin-top:6px"></p>
@@ -451,7 +456,7 @@
   <p class="sub" id="ownerMsg"></p>
 </dialog>
 
-<div class="toast" id="toast"></div>
+<dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Audio is live only, never recorded. Your microphone stays muted between transmissions. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -468,8 +473,7 @@ var SLOTS=12;
 var CHANNELS=[
   {id:'dispatch', name:'Dispatch', num:'CH 1'},
   {id:'tac1', name:'Tac 1', num:'CH 2'},
-  {id:'tac2', name:'Tac 2', num:'CH 3'},
-  {id:'oem-drill', name:'OEM Drill', num:'CH 4', training:true}
+  {id:'tac2', name:'Tac 2', num:'CH 3'}
 ];
 var CODES_MAIN=[['10-4','Acknowledged'],['10-9','Repeat last'],['10-20','Your location?'],['10-22','Disregard'],['10-8','In service'],['10-7','Out of service'],['10-1','Weak signal'],['10-2','Good signal'],['10-6','Busy, stand by'],['10-23','Arrived at scene']];
 var CODES_ALL=[['10-0','Caution'],['10-1','Weak signal'],['10-2','Good signal'],['10-3','Stop transmitting'],['10-4','Acknowledged'],['10-5','Relay message'],['10-6','Busy, stand by'],['10-7','Out of service'],['10-8','In service'],['10-9','Repeat last'],['10-10','Standing by'],['10-11','Speak slower'],['10-12','Stand by'],['10-13','Weather/road report'],['10-15','Message delivered'],['10-17','En route'],['10-18','Urgent, expedite'],['10-19','Return to base'],['10-20','Location'],['10-21','Call by phone'],['10-22','Disregard'],['10-23','Arrived at scene'],['10-24','Assignment completed'],['10-25','Meet / report to'],['10-26','ETA?'],['10-28','Registration info'],['10-29','Records check'],['10-33','Emergency, help now'],['10-39','Respond lights and siren'],['10-41','Starting shift'],['10-42','Ending shift']];
@@ -542,6 +546,7 @@ function fbCreateChannel(id,name,cat,prot,cb){
   });
 }
 function fbJoinCheck(chan,cb){
+  if(chan.agencyId){if(!fbReady){cb(false,'Agency needs a live connection.');return;}fdb.doc('agencies/'+chan.agencyId).get({source:'server'}).then(function(s){cb(s.exists&&s.data().version===chan.agencyVersion,'Agency access changed.');}).catch(function(){cb(false,'Agency access denied.');});return;}
   if(!fdb||!chan.user||chan.cat==='dm'){ cb(true); return; }
   fbWhenReady(function(ok){
     if(!ok){ cb(true); return; }
@@ -605,7 +610,7 @@ var sfxBuffers={};
 function sfxLoad(){
   var ctx=ac(); if(!ctx) return;
   Object.keys(SFX_FILES).forEach(function(k){
-    if(sfxBuffers[k]) return;
+    if(sfxBuffers[k]||!SFX_FILES[k]) return;
     sfxBuffers[k]='loading';
     var loadingFile=SFX_FILES[k];
     fetch(loadingFile).then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); }).then(function(ab){
@@ -685,6 +690,7 @@ function mdcBurst(level){
    scratch - MDC-style 1200/1800Hz data chirp, then triple 1800Hz permit beeps. */
 function keyChirp(){
   if(!radioFxOn) return;
+  if(sndSel('press')==='none')return;
   if(playSfx('press',{gain:1})) return;
   var ctx=ac(); if(!ctx) return;
   var t=ctx.currentTime;
@@ -718,7 +724,7 @@ function rogerBeep(){
   setTimeout(function(){
     if(playSfx('release',{gain:0.9})) return;
     if(!playSfx('beep',{rate:1,gain:0.5})) beep(1000,110,'sine',0.06);
-  }, 160);
+  }, 0);
 }
 /* incoming-transmission sound: double police-radio beep when another unit starts
    talking (sfx-incoming.mp3, Pixabay Content License placeholder - swap the file to
@@ -729,7 +735,7 @@ function incomingChirp(){
     if(playSfx('incoming',{gain:0.95})) return;
     beep(2300,87,'sine',0.08);
     setTimeout(function(){ beep(2300,87,'sine',0.08); }, 170);
-  }, 140);
+  }, 0);
 }
 function makeDistortionCurve(k){
   var n=1024, c=new Float32Array(n);
@@ -827,9 +833,10 @@ CHANNELS.forEach(function(c){
    password itself. Owner = whoever holds slot 1 (creator claims it at creation;
    first-come enforced by the signaling server). Discovery is a best-effort
    lobby (oc27x-dir-s1..8): members of public channels advertise while online. */
-var CATS=[['stream','Streaming'],['oem','OEM / Training'],['rp','Roleplay'],['other','Other']];
+var CATS=[['stream','Streaming'],['event','Event staff'],['rp','Roleplay'],['other','Other']];
 var DIR_SLOTS=8, advPeer=null, dirTimer=null, dirResults={};
 function normName(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function publicChannelId(base,pw){return pw?sha256hex(base+'|'+pw).then(function(h){return 'r'+base+'p'+h;}):Promise.resolve('r'+base);}
 function chanKey(name,pw){
   var norm=normName(name);
   return sha256hex(norm).then(function(h){
@@ -1047,7 +1054,8 @@ ccGo.onclick=function(){
   if(name.length<3||name.length>24){ ccMsg.textContent='Name needs 3-24 characters.'; return; }
   if(!/^[a-z0-9][a-z0-9 \-_.]*$/.test(name)){ ccMsg.textContent='Letters, numbers, spaces, dash, dot, underscore only.'; return; }
   ccMsg.textContent='Checking that name…'; ccGo.disabled=true;
-  chanKey(name,pw).then(function(id){
+  var baseId=agRandom(8);
+  publicChannelId(baseId,pw).then(function(id){
    fbCreateChannel(id,name,ccCat,!!pw,function(fok,fmsg){
     if(!fok){ ccGo.disabled=false; ccMsg.textContent=fmsg||'That channel name is permanently registered to another owner.'; return; }
     probeChan(id,function(meta){
@@ -1074,7 +1082,8 @@ jcGo.onclick=function(){
   var name=normName(jcName.value), pw=jcPass.value;
   if(name.length<3){ jcMsg.textContent='Enter the channel name.'; return; }
   jcMsg.textContent='Looking for that channel…'; jcGo.disabled=true;
-  chanKey(name,pw).then(function(id){
+  var keyPromise=/^oc-[a-f0-9]{16}$/.test(name)?publicChannelId(name.slice(3),pw):chanKey(name,pw);
+  keyPromise.then(function(id){
     probeChan(id,function(meta){
       jcGo.disabled=false;
       if(!meta){ jcMsg.textContent='Nothing live on that name'+(pw?' and password':'')+' right now. Check with whoever made it, or create it from the Create screen.'; return; }
@@ -1239,7 +1248,7 @@ el('agSubmit').onclick=function(){
       phone=el('agPhone').value.trim().slice(0,24), web=el('agWeb').value.trim().slice(0,120);
   if(!agType){ msg.textContent='Pick an agency type first.'; return; }
   if(agency.length<3){ msg.textContent='Agency or township name (3+ characters).'; return; }
-  if(nm.length<2){ msg.textContent='Your full name.'; return; }
+  if(nm.length<2){ msg.textContent='Your radio name.'; return; }
   if(role.length<2){ msg.textContent='Your role at the agency.'; return; }
   if(email.indexOf('@')<1||email.indexOf('.')<0){ msg.textContent='An official email we can reach you at.'; return; }
   if(phone.replace(/\D/g,'').length<7){ msg.textContent='An official phone number.'; return; }
@@ -1264,39 +1273,6 @@ el('agSubmit').onclick=function(){
       : 'Could not submit right now \u2014 try again in a moment.';
   });
 };
-function loadAgApproved(){
-  var box=el('agApproved');
-  if(!fbReady||!fdb){ box.innerHTML='<span style="color:var(--dim)">Connecting\u2026 reopen this tab in a moment.</span>'; return; }
-  fdb.collection('agency_requests').where('status','==','approved').get().then(function(q){
-    box.innerHTML='';
-    if(q.empty){ box.innerHTML='<span style="color:var(--dim)">None yet \u2014 approved networks show up here after review.</span>'; return; }
-    q.forEach(function(doc){
-      var a=doc.data();
-      var b=chanItemEl({name:a.agency,cat:'oem'}, a.typeLabel+' \u00b7 verified request');
-      b.querySelector('.cdot').classList.add('on');
-      b.onclick=function(){ agSetupChannels(a); };
-      box.appendChild(b);
-    });
-  }).catch(function(){ box.innerHTML='<span style="color:var(--dim)">Could not load \u2014 reopen this tab in a moment.</span>'; });
-}
-function agSetupChannels(a){
-  toast('Setting up '+a.agency+' channels\u2026');
-  var chans=[], i=0;
-  (function next(){
-    if(i>=AG_PRESETS.length){
-      toast(a.agency+': channel set ready \u2014 see My channels.');
-      return;
-    }
-    var full=a.agency+' '+AG_PRESETS[i];
-    chanKey(full,'').then(function(id){
-      fbCreateChannel(id,full,'oem',false,function(ok){
-        if(ok){ addMyChan({name:full,cat:'oem',id:id,prot:false,owner:true,created:Date.now()}); }
-        i++; next();
-      });
-    });
-  })();
-}
-
 /* ---------- multi-channel scan: listen to other channels live (receive-only), talk stays on the joined channel ---------- */
 function scanSlotId(rec,i){ return APP+'-'+rec.id+'-s'+i; }
 function scanToggle(rec){
@@ -1413,18 +1389,19 @@ function markStatus(btn){
 }
 /* ---------- custom beeps: owner-supplied clips, selectable per sound; Defaults: release Clip 1, incoming Clip 4 ---------- */
 var USER_CLIPS={clip1:'beeps/clip1.mp3',clip2:'beeps/clip2.mp3',clip3:'beeps/clip3.mp3',clip4:'beeps/clip4.mp3'};
-var SND_ORIG={rel:'sfx-release.mp3',inc:'sfx-incoming.mp3'};
-var SND_LABELS={orig:'Original',clip1:'Clip 1',clip2:'Clip 2',clip3:'Clip 3',clip4:'Clip 4'};
+var SND_ORIG={press:'sfx-press.mp3',rel:'sfx-release.mp3',inc:'sfx-incoming.mp3'};
+var SND_LABELS={none:'None',orig:'Original',clip1:'Clip 1',clip2:'Clip 2 (long)',clip3:'Clip 3 (long)',clip4:'Clip 4'};
 if(!load('beepMigration36',false)){ if(load('sndrel',null)==='orig') save('sndrel','clip1'); save('beepMigration36',true); }
-function sndSel(which){ var def=which==='rel'?'clip1':'clip4'; var s=load('snd'+which,def); return (s==='orig'||USER_CLIPS[s])?s:def; }
+function sndSel(which){ var def=which==='press'?'orig':(which==='rel'?'clip1':'clip4'); var s=load('snd'+which,def); return (s==='orig'||s==='none'||USER_CLIPS[s])?s:def; }
 function sndApply(which){
-  var sel=sndSel(which), key=(which==='rel')?'release':'incoming';
-  var file=(sel==='orig')?SND_ORIG[which]:USER_CLIPS[sel];
-  if(SFX_FILES[key]!==file){ SFX_FILES[key]=file; sfxBuffers[key]=null; sfxLoad(); }
+  var sel=sndSel(which), key=which==='press'?'press':((which==='rel')?'release':'incoming');
+  var file=sel==='none'?'':((sel==='orig')?SND_ORIG[which]:USER_CLIPS[sel]);
+  if(SFX_FILES[key]!==file){ SFX_FILES[key]=file; sfxBuffers[key]=toneOptionBuffers&&toneOptionBuffers[sel]&&toneOptionBuffers[sel]!=='loading'?toneOptionBuffers[sel]:null; sfxLoad(); }
 }
 function sndPreview(which){
   var sel=sndSel(which);
-  if(sel==='orig'){ playSfx(which==='rel'?'release':'incoming'); return; }
+  if(sel==='none')return;
+  if(sel==='orig'){ playSfx(which==='press'?'press':(which==='rel'?'release':'incoming')); return; }
   try{ var a=new Audio(USER_CLIPS[sel]); a.play().catch(function(){}); }catch(e){}
 }
 function sndRow(rowEl, which, opts){
@@ -1438,11 +1415,88 @@ function sndRow(rowEl, which, opts){
     rowEl.appendChild(b);
   });
 }
-sndRow(el('sndRelRow'),'rel',['orig','clip1','clip2','clip3']);
-sndRow(el('sndIncRow'),'inc',['orig','clip1','clip2','clip3','clip4']);
-sndApply('rel'); sndApply('inc');
+var toneOptionBuffers={};function preloadToneOptions(){Object.keys(USER_CLIPS).forEach(function(k){if(toneOptionBuffers[k])return;toneOptionBuffers[k]='loading';fetch(USER_CLIPS[k]).then(function(r){return r.arrayBuffer();}).then(function(b){return ac().decodeAudioData(b);}).then(function(b){toneOptionBuffers[k]=b;}).catch(function(){delete toneOptionBuffers[k];});});}
+var generatedToneNames=["Clear", "Double", "Rising", "Falling", "Soft", "Bright", "Triple", "Pulse", "Chime"];
+function generatedToneURL(cat,j){var dur=(.15+j*.028)*(cat==='incoming'?1.5:1),rate=16000,n=Math.floor(dur*rate),ab=new ArrayBuffer(44+n*2),v=new DataView(ab);function str(o,t){for(var z=0;z<t.length;z++)v.setUint8(o+z,t.charCodeAt(z));}str(0,'RIFF');v.setUint32(4,36+n*2,true);str(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);str(36,'data');v.setUint32(40,n*2,true);for(var i=0;i<n;i++){var t=i/rate,f=650+j*130+(j%2===0?240:-180)*t/dur,pulse=([1,6,7].indexOf(j)<0||Math.floor(t/(dur/(j===1?4:6)))%2===0)?1:0,env=Math.max(0,Math.min(1,t/.008,(dur-t)/.025));v.setInt16(44+i*2,Math.round(.24*env*pulse*(Math.sin(2*Math.PI*f*t)+(j===8?.2*Math.sin(2*Math.PI*f*1.5*t):0))*32767),true);}return URL.createObjectURL(new Blob([ab],{type:'audio/wav'}));}
+['press','release','incoming'].forEach(function(cat){generatedToneNames.forEach(function(n,i){var key=cat+(i+1);USER_CLIPS[key]=generatedToneURL(cat,i);SND_LABELS[key]=n;});});
+['press','rel','inc'].forEach(function(which){var cat=which==='rel'?'release':which==='inc'?'incoming':'press';var opts=which==='press'?['orig','none']:which==='rel'?['clip1','orig']:['clip4','orig'];generatedToneNames.forEach(function(n,i){opts.push(cat+(i+1));});if(which==='rel')opts.push('clip2','clip3');if(which==='inc')opts.push('clip1','clip2','clip3');sndRow(el(which==='press'?'sndPressRow':which==='rel'?'sndRelRow':'sndIncRow'),which,opts);sndApply(which);});
 /* agency area lives inside Settings (general-use app; org channels stay out of the main nav) */
 el('agEntryBtn').onclick=function(){ switchTab('Agencies'); };
+/* Invite-only agencies: Firestore metadata, secret-derived live peer namespaces. */
+var agWatches=[],agDocs={},agSelected=null;
+function agRandom(bytes){return Array.from(crypto.getRandomValues(new Uint8Array(bytes))).map(function(n){return n.toString(16).padStart(2,'0');}).join('');}
+function agNote(s){el('agAccessMsg').textContent=s;}
+function agButton(text,fn,box){var b=document.createElement('button');b.className='mini-btn';b.type='button';b.style.cssText='padding:10px;margin:4px';b.textContent=text;b.onclick=fn;box.appendChild(b);return b;}
+function agRemember(a){var l=load('agencyIds',[]);if(l.indexOf(a)<0){l.push(a);save('agencyIds',l);} }
+function loadAgApproved(){
+ var box=el('agApproved');box.textContent='';agWatches.forEach(function(f){f();});agWatches=[];agDocs={};
+ if(!fbReady){box.textContent='Connecting. Reopen this area in a moment.';return;}
+ var ids=load('agencyIds',[]);
+ if(!ids.length)box.textContent='No agencies on this device. Redeem an invite from your verified agency admin.';
+ ids.forEach(function(a){
+  var row=document.createElement('div');box.appendChild(row);
+  agWatches.push(fdb.doc('agencies/'+a).onSnapshot(function(s){
+   if(!s.exists)return;var d=s.data(),prior=agDocs[a];agDocs[a]=d;row.textContent='';
+   var title=document.createElement('p');title.textContent=d.name+' · invite-only';row.appendChild(title);
+   ['Dispatch','Tac 1','Tac 2','Event staff'].forEach(function(label,i){agButton(label,function(){agJoin(a,i,label);},row);});
+   if(d.ownerUid===fbUid)agButton('Admin tools',function(){agManage(a);},row);
+   if(prior&&prior.version!==d.version&&channel&&channel.agencyId===a){leaveChannel();toast('Agency access key rotated. Tap a channel to reconnect.');}
+  },function(){delete agDocs[a];row.textContent='Agency access unavailable or removed.';if(channel&&channel.agencyId===a){leaveChannel();toast('Agency access ended.');}}));
+ });
+ fdb.doc('appAdmins/'+fbUid).get().then(function(s){el('agVerifyPanel').classList.toggle('hidden',!s.exists);}).catch(function(){});
+ el('agAccountId').textContent=fbUid;
+}
+function agJoin(a,i,label){
+ fdb.doc('agencies/'+a).get({source:'server'}).then(function(s){if(!s.exists)throw Error('Access unavailable');var d=s.data();return sha256hex('agency|'+a+'|'+d.secret+'|'+i).then(function(h){
+  startJoin({id:'a'+h,name:d.name+' · '+label,cat:'agency',user:true,prot:true,training:false,agencyId:a,agencyVersion:d.version});
+ });}).catch(function(){toast('Agency access unavailable. No offline admission.');});
+}
+function agRedeem(){
+ var raw=el('agInviteCode').value.trim(),code=raw.indexOf('#invite=')>=0?raw.split('#invite=')[1]:raw;
+ if(!/^[a-f0-9]{32}$/.test(code)){agNote('Enter the 32-character invitation code or invitation link.');return;}
+ if(!fbReady){agNote('Still connecting.');return;}agNote('Checking invitation...');
+ var a;
+ fdb.runTransaction(function(t){var r=fdb.doc('invites/'+code);return t.get(r).then(function(s){
+  if(!s.exists)throw Error('Invalid invite');var d=s.data();a=d.agencyId;
+  if(d.revoked||d.expiry.toMillis()<=Date.now()||d.uses>=d.maxUses)throw Error('Invite expired, revoked or used up');
+  t.update(r,{uses:d.uses+1,lastUid:fbUid});t.set(fdb.doc('agencies/'+a+'/members/'+fbUid),{role:'member',invite:code,joinedAt:firebase.firestore.FieldValue.serverTimestamp()});
+ });}).then(function(){agRemember(a);agNote('Invitation accepted.');el('agInviteCode').value='';history.replaceState(null,'',location.pathname);loadAgApproved();}).catch(function(){agNote('Invite not accepted. It may be expired, revoked, used up, or already redeemed by this account.');});
+}
+el('agRedeem').onclick=agRedeem;
+function agManage(a){
+ agSelected=a;var box=el('agManage');box.textContent='';var d=agDocs[a];
+ var h=document.createElement('p');h.textContent=d.name+' · agency admin';box.appendChild(h);
+ agButton('Create invitation',function(){
+  var code=agRandom(16),count=Number(el('agInviteUses').value)||1,days=Number(el('agInviteDays').value)||7;
+  fdb.doc('invites/'+code).set({agencyId:a,expiry:firebase.firestore.Timestamp.fromMillis(Date.now()+Math.min(30,Math.max(1,days))*86400000),maxUses:Math.min(200,Math.max(1,count)),uses:0,revoked:false,lastUid:''}).then(function(){
+   var out=document.createElement('input');out.readOnly=true;out.style.width='100%';out.value=location.origin+location.pathname+'#invite='+code;box.appendChild(out);out.select();agNote('Invite created. Share only with intended members.');
+  }).catch(function(){agNote('Could not create invite.');});
+ },box);
+ agButton('Rotate access key',function(){fdb.runTransaction(function(t){var r=fdb.doc('agencies/'+a);return t.get(r).then(function(s){t.update(r,{secret:agRandom(32),version:s.data().version+1});});}).then(function(){agNote('Key rotated. Members must reconnect.');}).catch(function(){agNote('Rotation failed.');});},box);
+ fdb.collection('agencies/'+a+'/members').get().then(function(q){q.forEach(function(s){var line=document.createElement('div');line.style.cssText='overflow-wrap:anywhere;margin:8px 0';line.textContent=s.id+' · '+s.data().role;box.appendChild(line);if(s.id!==d.ownerUid)agButton('Remove + rotate',function(){
+  fdb.runTransaction(function(t){var r=fdb.doc('agencies/'+a);return t.get(r).then(function(z){t.update(r,{secret:agRandom(32),version:z.data().version+1});t.delete(s.ref);});}).then(function(){agNote('Member removed and key rotated atomically.');agManage(a);}).catch(function(){agNote('Removal failed.');});
+ },line);});});
+ fdb.collection('invites').where('agencyId','==',a).get().then(function(q){q.forEach(function(s){var z=s.data();if(z.revoked)return;var line=document.createElement('div');line.style.overflowWrap='anywhere';line.textContent='Invite '+s.id+' · '+z.uses+'/'+z.maxUses;box.appendChild(line);agButton('Revoke invite',function(){s.ref.update({revoked:true}).then(function(){agManage(a);});},line);});});
+}
+el('agVerify').onclick=function(){
+ var a=agRandom(16),nm=el('agVerifyName').value.trim().slice(0,48),uid=el('agVerifyUid').value.trim();if(nm.length<3||uid.length<10){agNote('Agency name and owner account ID required. Verify out-of-band first.');return;}
+ var b=fdb.batch();b.set(fdb.doc('agencies/'+a),{name:nm,ownerUid:uid,verified:true,secret:agRandom(32),version:1,createdAt:firebase.firestore.FieldValue.serverTimestamp()});b.set(fdb.doc('agencies/'+a+'/members/'+uid),{role:'admin',invite:'',joinedAt:firebase.firestore.FieldValue.serverTimestamp()});
+ b.commit().then(function(){agNote('Verified. Give owner this agency ID to load: '+a);if(uid===fbUid){agRemember(a);loadAgApproved();}}).catch(function(){agNote('Verification denied. Only an allowlisted app admin can do this.');});
+};
+el('agLoad').onclick=function(){var a=el('agLoadId').value.trim();if(!/^[a-f0-9]{32}$/.test(a))return;fdb.doc('agencies/'+a).get({source:'server'}).then(function(s){if(!s.exists)throw Error();agRemember(a);loadAgApproved();}).catch(function(){agNote('No access to that agency. An ID alone does not grant membership.');});};
+if(location.hash.indexOf('#invite=')===0){el('agInviteCode').value=location.hash.slice(8);switchTab('Agencies');}
+/* Active agency sessions fail closed when offline, removed, or key changes. No cached secret admission. */
+var agSessionUnsub=null;
+function agWatchSession(c){
+ if(agSessionUnsub){agSessionUnsub();agSessionUnsub=null;}
+ if(!c.agencyId)return;
+ var serverSeen=false;
+ agSessionUnsub=fdb.doc('agencies/'+c.agencyId).onSnapshot({includeMetadataChanges:true},function(s){
+  if(!s.metadata.fromCache)serverSeen=true;
+  if((serverSeen&&s.metadata.fromCache)||(!s.metadata.fromCache&&(!s.exists||s.data().version!==c.agencyVersion))){if(channel&&channel.agencyId===c.agencyId){leaveChannel();toast('Agency access changed or connection lost. Reconnect from Settings.');}}
+ },function(){if(channel&&channel.agencyId===c.agencyId){leaveChannel();toast('Agency access revoked.');}});
+}
+
 var codesMode='std', codesAllOpen=false;
 var tabStd=el('tabStd'), tabRp=el('tabRp'), allCodesBtn=el('allCodesBtn'), codesAll=el('codesAll');
 function codeBtn(pair, into){
@@ -1483,6 +1537,7 @@ function slotId(i){ return APP+'-'+channel.id+'-s'+i; }
 function startJoin(chan, preclaimed){
   myName=(nickInput.value.trim().slice(0,20))||('Unit '+Math.floor(Math.random()*90+10));
   nickInput.value=myName; save('nick',myName);
+  ac(); sfxLoad(); friendlyMic();
   toast('Checking your account\u2026');
   fbClaimName(function(ok,msg){
     if(!ok){ toast(msg||'That radio name is registered to another account.'); return; }
@@ -1495,8 +1550,10 @@ function startJoin(chan, preclaimed){
 }
 function proceedJoin(chan, preclaimed){
   channel=chan;
+  agWatchSession(chan);
+  if(chan.id.charAt(0)==='r') toast('Channel ID: OC-'+chan.id.slice(1,17));
   homeView.classList.add('hidden'); chanView.classList.remove('hidden');
-  chanTitle.firstChild.textContent=chan.user?(chan.name):(chan.num+' · '+chan.name);
+  chanTitle.firstChild.textContent=(chan.user?(chan.name):(chan.num+' · '+chan.name))+(chan.id.charAt(0)==='r'?' · OC-'+chan.id.slice(1,17):'');
   oemBanner.classList.toggle('hidden', !chan.training);
   feed.innerHTML='';
   chanOwner=false;
@@ -1528,7 +1585,7 @@ function joined(p,slot){
   feedSys('You joined <b>'+esc(channel.name)+'</b> as <b>'+esc(myName)+'</b>'+(offline?' (offline demo)':''));
   refreshFloorUI(); renderUsers();
   if(hasMod()){ announceOwner(); renderAdmin(); adminPanel.classList.remove('hidden'); }
-  if(channel.user&&!channel.prot&&channel.cat!=='dm') startAdvertising();
+  if(channel.user&&!channel.prot&&channel.cat!=='dm'&&!channel.agencyId) startAdvertising();
   scan();
   setInterval(scan,25000);
 }
@@ -1548,6 +1605,9 @@ function wirePeer(){
 /* Each connect to an empty slot makes an RTCPeerConnection; without a close
    they pile up until Chrome refuses new ones, so every attempt gets a 6s
    self-destruct unless it opens. */
+var warmCalls=new Map();
+function warmPeer(id){if(!peer||!micStream||warmCalls.has(id))return;try{var c=peer.call(id,micStream);warmCalls.set(id,c);c.on('close',function(){warmCalls.delete(id);});}catch(e){}}
+function warmAllPeers(){conns.forEach(function(u,id){warmPeer(id);});}
 var pendingConns={};
 function scan(){
   if(!peer||peer.destroyed) return;
@@ -1583,6 +1643,7 @@ function setupConn(conn){
     try{ conn.send({t:'hello',name:myName,status:myStatus,note:myNote,dsp:dispatcher,uid:fbUid}); }catch(e){}
     /* channel self-announce: probes and joiners learn the channel meta race-free */
     if(channel&&channel.user){ try{ conn.send(chanAnnounce()); }catch(e){} }
+    warmPeer(conn.peer);
     renderUsers();
   });
   conn.on('data', function(d){ handleData(conn.peer,d,conn); });
@@ -1664,13 +1725,13 @@ function handleData(from,d,conn){
     if(d.on){
       if(tx&&d.dsp&&!dispatcher){ releasePTT(true); feedSys('Dispatcher took the net'); }
       floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;
-      if(u){u.talking=true;}
+      if(u){u.talking=true;if(u.audioGain)u.audioGain.gain.value=u.muted?0:1;if(u.audioEl)u.audioEl.muted=!!u.muted;}
       buzz(18);
       try{ if(navigator.vibrate) navigator.vibrate([140,70,140]); }catch(e){}
       incomingAlert(floorName);
       squelch(true); incomingChirp(); startStatic(); startLiveRow(floorName); refreshFloorUI(); renderUsers();
     } else {
-      if(u){u.talking=false;}
+      if(u){u.talking=false;if(u.audioGain)u.audioGain.gain.value=0;if(u.audioEl)u.audioEl.muted=true;}
       if(floorHolder===from){ floorHolder=null; floorName=''; floorIsDsp=false; }
       stopStatic(); squelch(false); rogerBeep(); endLiveRow(); endIncomingAlert(); refreshFloorUI(); renderUsers();
     }
@@ -1780,22 +1841,28 @@ function pressPTT(){
   if(floorHolder&&dispatcher&&floorIsDsp){ toast('Another dispatcher has the net'); return; }
   ac(); buzz(30);
   if(micStream){ startTx(); return; }
-  if(micFailed){ toast('No microphone on this device — listen-only mode.'); return; }
+  if(micFailed){openDlg(el('micDlg'));el('micHelp').textContent='Microphone blocked or unavailable. Allow it in your browser or device settings, then try again. You can still listen.';return;}
+  if(!load('micExplained',false)){friendlyMic();return;}
   /* mic is requested at channel join; if it is not ready yet, start it and say so */
   ensureMic();
   toast('Starting the microphone — let go and hold TALK again.');
 }
+function friendlyMic(){ac();sfxLoad();preloadToneOptions();if(!load('micExplained',false)){openDlg(el('micDlg'));return;}ensureMic();}
+el('micAllow').onclick=function(){save('micExplained',true);micFailed=false;ac();sfxLoad();ensureMic();closeDlg(el('micDlg'));};
+el('micLater').onclick=function(){closeDlg(el('micDlg'));toast('Listen-only. Tap TALK to enable the microphone later.');};
 function ensureMic(){
+  if(!load('micExplained',false))return;
   if(micStream||micFailed||ensureMic.pending) return;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ micFailed=true; return; }
   ensureMic.pending=true;
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
-    ensureMic.pending=false; micStream=s;
+    ensureMic.pending=false; micStream=s; micStream.getAudioTracks().forEach(function(t){t.enabled=false;});warmAllPeers();
   }).catch(function(){
-    ensureMic.pending=false; micFailed=true;
+    ensureMic.pending=false; micFailed=true;toast('Microphone blocked or unavailable. Tap TALK for help.');
   });
 }
 function startTx(){
+  micStream.getAudioTracks().forEach(function(t){t.enabled=true;});
   tx=true; floorHolder=peer?peer.id:null; floorName=myName;
   /* press = the owner's chosen key-up clip, raw (it already contains the click + burst);
      no extra squelch click on top. Fallback chain lives inside keyChirp. */
@@ -1803,8 +1870,7 @@ function startTx(){
   broadcast({t:'floor',on:true,name:myName,dsp:dispatcher});
   txFeedRow=feedVoice({name:myName+' (you)',live:true});
   attachMeter(txFeedRow, micStream);
-  myCalls=[];
-  conns.forEach(function(u,id){ try{ myCalls.push(peer.call(id,micStream)); }catch(e){} });
+  warmAllPeers();
   refreshFloorUI();
 }
 function releasePTT(yielded){
@@ -1815,8 +1881,7 @@ function releasePTT(yielded){
   rogerBeep();
   broadcast({t:'floor',on:false,name:myName});
   if(txFeedRow){ detachMeter(txFeedRow); txFeedRow.remove(); txFeedRow=null; }
-  myCalls.forEach(function(c){ try{c.close();}catch(e){} });
-  myCalls=[];
+  if(micStream)micStream.getAudioTracks().forEach(function(t){t.enabled=false;});
   refreshFloorUI();
 }
 var pttLock=false, tapBtn=el('tapBtn');
@@ -1853,14 +1918,14 @@ function playStream(pid,rs){
       var post=ctx.createBiquadFilter(); post.type='lowpass'; post.frequency.value=3200;
       var comp=ctx.createDynamicsCompressor();
       comp.threshold.value=-18; comp.knee.value=3; comp.ratio.value=12; comp.attack.value=0.002; comp.release.value=0.08;
-      var g=ctx.createGain(); g.gain.value=(u&&u.muted)?0:1;
+      var g=ctx.createGain(); g.gain.value=(!u||u.muted||!u.talking)?0:1;
       src.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(ws); ws.connect(post); post.connect(comp); comp.connect(g); g.connect(ctx.destination);
       if(u){ u.audioGain=g; u.audioNodes=[src,hp,lp,pre,ws,post,comp,g]; }
       return;
     }catch(e){}
   }
   var a=document.createElement('audio'); a.autoplay=true; a.playsInline=true;
-  a.srcObject=rs; a.muted=!!(u&&u.muted);
+  a.srcObject=rs; a.muted=!u||u.muted||!u.talking;
   document.body.appendChild(a);
   if(u) u.audioEl=a;
   a.play().catch(function(){});
@@ -2080,10 +2145,13 @@ function enterOffline(){
   feedSys('Signaling unreachable — showing offline demo');
 }
 function leaveChannel(){
+  if(agSessionUnsub){agSessionUnsub();agSessionUnsub=null;}
   releasePTT();
   myCalls.forEach(function(c){try{c.close();}catch(e){}}); myCalls=[];
   conns.forEach(function(u){ try{u.conn.close();}catch(e){} stopStream(u.conn.peer); });
   conns.clear();
+  warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();
+  if(micStream){micStream.getTracks().forEach(function(t){t.stop();});micStream=null;}
   if(peer){ try{peer.destroy();}catch(e){} peer=null; }
   tx=false; floorHolder=null; locked=false; ownerOnline=false; ownerPeer=null; chanOwner=false; banUids={};
   stopAdvertising();
@@ -2112,13 +2180,18 @@ dspBtn.onclick=function(){
 
 /* ---------- install as app (PWA) ---------- */
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+el('homeInstall').onclick=function(){installBtn.click();};
+el('homeCreate').onclick=function(){el('sheetCreate').click();};
+el('homeJoin').onclick=function(){el('sheetJoin').click();};
+el('homeEvent').onclick=function(){el('sheetCreate').click();ccCat='event';ccName.placeholder='Your event or crew name';ccPass.placeholder='Crew password (recommended)';};
+chanTitle.onclick=function(){if(channel&&channel.id.charAt(0)==='r'){var id='OC-'+channel.id.slice(1,17);toast(id+' · share password separately');if(navigator.clipboard)navigator.clipboard.writeText(id).catch(function(){});}};
 var deferredInstall=null;
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredInstall=e; });
 installBtn.onclick=function(){
   if(deferredInstall){ deferredInstall.prompt(); }
   else{
     var ios=/iPad|iPhone|iPod/.test(navigator.userAgent);
-    toast(ios? 'On iPhone: Share button → Add to Home Screen' : 'Use your browser menu → Add to Home screen / Install app');
+    el('installHelp').textContent=ios?'On iPhone in Safari: tap Share, scroll down, tap Add to Home Screen, then Add.':'Open the browser menu, then Install app or Add to Home screen. If no install option appears, use Chrome or Safari.'; toast(el('installHelp').textContent);
   }
 };
 window.addEventListener('beforeunload',function(){ releasePTT(); });
