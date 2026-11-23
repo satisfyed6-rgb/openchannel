@@ -45,3 +45,7 @@ Changed from live-only at the owner's request. Each new client shows a recording
 
 ## Free team tools (v40)
 Yes/no polls and check-in/out presence are sent to currently connected channel peers using the live data channel, not uploaded to Firestore. They disappear on reload and late joiners do not receive old polls or attendance. Votes are one per connected peer, not verified per person; reconnecting can create a new peer identity. Limit 20 polls/session and 30 tool events/minute per sender. Check-in/out computes your own elapsed time using the device clock, stores up to 100 sessions per channel locally, and can be deleted. It is not a payroll/official attendance system. Private notes are capped at 4,000 characters per channel in localStorage, save/delete only, never broadcast or uploaded. Browser data deletion loses notes/hours.
+
+
+## Local outgoing voice effects (v41)
+Normal (default), deep, high, robot and radio process the microphone locally before outgoing live audio. No server processing or audio upload service. Deep/high use two overlapping delay grains in a ScriptProcessor fallback, with roughly 50-100ms processing latency and possible artifacts. Robot uses ring modulation, radio uses filters and soft distortion. Not identity protection, not impersonation models, no voice cloning. Normal bypasses effects; choose it on older devices if audio crackles. Receiver-side Radio FX remains a separate listening effect.
