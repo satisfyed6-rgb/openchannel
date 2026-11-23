@@ -607,8 +607,9 @@ function sfxLoad(){
   Object.keys(SFX_FILES).forEach(function(k){
     if(sfxBuffers[k]) return;
     sfxBuffers[k]='loading';
-    fetch(SFX_FILES[k]).then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); }).then(function(ab){
-      ctx.decodeAudioData(ab, function(buf){ sfxBuffers[k]=buf; }, function(){ sfxBuffers[k]=null; });
+    var loadingFile=SFX_FILES[k];
+    fetch(loadingFile).then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); }).then(function(ab){
+      ctx.decodeAudioData(ab, function(buf){ if(SFX_FILES[k]===loadingFile) sfxBuffers[k]=buf; }, function(){ if(SFX_FILES[k]===loadingFile) sfxBuffers[k]=null; });
     }).catch(function(){ sfxBuffers[k]=null; });
   });
 }
@@ -640,6 +641,7 @@ function clickFx(ctx){
 /* squelch: open = short hiss as the carrier arrives; close = the classic noise-crash tail + release click */
 function squelch(open){
   if(!radioFxOn) return;
+  if(!open&&typeof sndSel==='function'&&sndSel('rel')!=='orig') return;
   if(open){ if(playSfx('click',{gain:0.9})) return; }
   else { if(playSfx('tail',{gain:0.85})) return; }
   var ctx=ac(); if(!ctx) return;
@@ -1413,6 +1415,7 @@ function markStatus(btn){
 var USER_CLIPS={clip1:'beeps/clip1.mp3',clip2:'beeps/clip2.mp3',clip3:'beeps/clip3.mp3',clip4:'beeps/clip4.mp3'};
 var SND_ORIG={rel:'sfx-release.mp3',inc:'sfx-incoming.mp3'};
 var SND_LABELS={orig:'Original',clip1:'Clip 1',clip2:'Clip 2',clip3:'Clip 3',clip4:'Clip 4'};
+if(!load('beepMigration36',false)){ if(load('sndrel',null)==='orig') save('sndrel','clip1'); save('beepMigration36',true); }
 function sndSel(which){ var def=which==='rel'?'clip1':'clip4'; var s=load('snd'+which,def); return (s==='orig'||USER_CLIPS[s])?s:def; }
 function sndApply(which){
   var sel=sndSel(which), key=(which==='rel')?'release':'incoming';
