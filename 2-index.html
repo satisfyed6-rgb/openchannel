@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OpenChannel — browser radio (prototype)</title>
+<style>
+  :root{
+    --bg:#101418; --panel:#171d24; --panel2:#1d242d; --line:#2a333e;
+    --lcd:#0b1f16; --lcd-fg:#5df2a6; --amber:#ffb02e; --red:#ff5a5a;
+    --text:#e8edf2; --dim:#8b97a3; --accent:#3ea6ff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  button{font:inherit; color:inherit}
+  .wrap{max-width:920px; margin:0 auto; padding:14px}
+  .topbar{display:flex; align-items:center; gap:10px; padding:10px 0}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--lcd-fg);box-shadow:0 0 8px var(--lcd-fg)}
+  .brand{font-weight:700; letter-spacing:.5px}
+  .pill{font-size:11px; color:#0b0f13; background:var(--amber); border-radius:4px; padding:2px 7px; font-weight:700; letter-spacing:1px}
+  .gear{margin-left:auto; background:none; border:1px solid var(--line); border-radius:8px; padding:6px 10px; cursor:pointer; color:var(--dim)}
+  .gear.owner{border-color:var(--amber); color:var(--amber)}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; margin-top:14px}
+  h1{font-size:20px; margin:0 0 4px}
+  .sub{color:var(--dim); margin:0 0 14px}
+  input[type=text]{width:100%; padding:12px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:16px}
+  .chan-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0}
+  .chan-btn{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:14px 12px; cursor:pointer; text-align:left}
+  .chan-btn:hover{border-color:var(--accent)}
+  .chan-btn .n{font-weight:700}
+  .chan-btn .d{font-size:12px; color:var(--dim)}
+  .chan-btn .tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.5px; color:#0b0f13; background:var(--amber); border-radius:3px; padding:1px 6px; margin-left:6px}
+  .big-btn{width:100%; padding:14px; border-radius:10px; border:0; background:var(--accent); color:#fff; font-weight:700; font-size:16px; cursor:pointer}
+  .big-btn:disabled{opacity:.5}
+  .lcd{background:var(--lcd); color:var(--lcd-fg); border-radius:10px; padding:12px 14px; font-family:ui-monospace,Menlo,Consolas,monospace; border:1px solid #123626}
+  .lcd .l1{font-size:18px; font-weight:700; letter-spacing:1px}
+  .lcd .l2{font-size:12px; opacity:.85; min-height:16px}
+  .lcd .led{display:inline-block; width:9px; height:9px; border-radius:50%; background:#234; margin-right:6px; vertical-align:1px}
+  .lcd .led.rx{background:var(--lcd-fg); box-shadow:0 0 8px var(--lcd-fg)}
+  .lcd .led.tx{background:var(--red); box-shadow:0 0 8px var(--red)}
+  .ptt-row{display:flex; gap:14px; align-items:center; margin-top:14px; flex-wrap:wrap}
+  .ptt{flex:0 0 auto; width:150px; height:150px; border-radius:50%; border:4px solid #39434f;
+    background:radial-gradient(circle at 35% 30%, #2b3540, #161c23); cursor:pointer;
+    color:var(--text); font-weight:800; letter-spacing:1px; font-size:16px;
+    touch-action:none; user-select:none; -webkit-user-select:none}
+  .ptt.tx{border-color:var(--red); color:var(--red); box-shadow:0 0 24px rgba(255,90,90,.35)}
+  .ptt:disabled{opacity:.45; cursor:not-allowed}
+  .ptt-hint{color:var(--dim); font-size:13px; max-width:200px}
+  .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+  .mini-btn{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; font-size:13px}
+  .mini-btn.on{border-color:var(--amber); color:var(--amber)}
+  .codes{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+  .code-btn{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:9px 6px; cursor:pointer; font-size:13px}
+  .code-btn b{color:var(--lcd-fg)}
+  .logbox{background:#0d1116; border:1px solid var(--line); border-radius:10px; padding:10px; height:170px; overflow-y:auto;
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px}
+  .logbox .t{color:var(--dim); margin-right:6px}
+  .logbox .me{color:var(--accent)}
+  .logbox .sys{color:var(--amber)}
+  .users{margin-top:6px}
+  .user-row{display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--line)}
+  .user-row:last-child{border-bottom:0}
+  .user-row .nm{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .user-row .talking{color:var(--lcd-fg)}
+  .user-row .badge{font-size:10px; font-weight:700; border-radius:3px; padding:1px 5px; background:var(--panel2); border:1px solid var(--line); color:var(--dim)}
+  .user-row .badge.dsp{color:var(--amber); border-color:var(--amber)}
+  .user-row .badge.own{color:#0b0f13; background:var(--amber); border-color:var(--amber)}
+  .user-row button{font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
+  .user-row button.warn{border-color:var(--red); color:var(--red)}
+  .banner{margin-top:14px; border:1px solid var(--amber); background:rgba(255,176,46,.12); color:var(--amber);
+    border-radius:10px; padding:12px 14px; font-weight:700; letter-spacing:.5px}
+  .banner small{display:block; font-weight:500; color:#e8c98a; letter-spacing:0}
+  .locked-note{color:var(--red); font-weight:700}
+  .admin-only{display:none}
+  body.owner .admin-only{display:block}
+  .admin-panel{border:1px solid var(--amber)}
+  .admin-panel h2{margin:0 0 8px; font-size:16px; color:var(--amber)}
+  .queue-item{border-bottom:1px solid var(--line); padding:8px 0; font-size:13px}
+  .queue-item:last-child{border-bottom:0}
+  .queue-item .q-t{color:var(--dim); font-size:11px}
+  .danger{background:var(--red); border:0; color:#fff; border-radius:8px; padding:8px 12px; cursor:pointer; font-size:13px}
+  .foot{color:var(--dim); font-size:12px; margin:18px 0 8px; line-height:1.6}
+  .toast{position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#232c36; border:1px solid var(--line);
+    padding:10px 16px; border-radius:10px; font-size:13px; display:none; max-width:90%; z-index:9}
+  .sec-label{font-size:12px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin:16px 0 6px}
+  dialog{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:14px; padding:18px; max-width:320px}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <span class="dot"></span>
+    <span class="brand">OpenChannel</span>
+    <span class="pill">PROTOTYPE</span>
+    <button class="gear" id="gearBtn" type="button">Owner</button>
+  </div>
+
+  <!-- JOIN -->
+  <div class="card" id="joinCard">
+    <h1>Push-to-talk, in the browser</h1>
+    <p class="sub">Pick a name and a channel. Hold the button to talk. Nothing to install.</p>
+    <input type="text" id="nickInput" maxlength="20" placeholder="Your radio name (e.g. Unit 12)" autocomplete="off">
+    <div class="chan-grid" id="chanGrid"></div>
+    <button class="big-btn" id="joinBtn" type="button" disabled>Join channel</button>
+    <p class="sub" id="joinStatus" style="margin-top:10px"></p>
+  </div>
+
+  <!-- RADIO -->
+  <div id="radioUI" style="display:none">
+    <div class="banner" id="oemBanner" style="display:none">
+      OEM DRILL — TRAINING USE ONLY. NOT FOR LIFE-SAFETY TRAFFIC.
+      <small>This channel is for practice drills only. In a real emergency call 911.</small>
+    </div>
+    <div class="card">
+      <div class="lcd">
+        <div class="l1"><span class="led" id="led"></span><span id="lcdChan">—</span></div>
+        <div class="l2" id="lcdStatus">connecting…</div>
+      </div>
+      <div class="ptt-row">
+        <button class="ptt" id="ptt" type="button">PUSH<br>TO<br>TALK</button>
+        <div class="ptt-hint" id="pttHint">Hold the button (or spacebar) to transmit.</div>
+      </div>
+      <div class="row">
+        <button class="mini-btn" id="dspBtn" type="button">Dispatcher mode: off</button>
+        <button class="mini-btn" id="leaveBtn" type="button">Leave channel</button>
+        <span class="locked-note" id="lockNote" style="display:none">CHANNEL LOCKED BY OWNER — only the owner can transmit</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label">10-codes</div>
+      <div class="codes" id="codesGrid"></div>
+      <div class="sec-label">Net log</div>
+      <div class="logbox" id="log"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label">On this channel</div>
+      <div class="users" id="users"></div>
+    </div>
+
+    <!-- OWNER PANEL -->
+    <div class="card admin-panel admin-only" id="adminPanel">
+      <h2>Owner controls</h2>
+      <div class="row">
+        <button class="mini-btn" id="lockBtn" type="button">Lock channel: off</button>
+        <button class="mini-btn" id="standbyBtn" type="button">Send “stand by” to channel</button>
+      </div>
+      <div class="sec-label">Ban list (this channel)</div>
+      <div id="banList"><span style="color:var(--dim)">No bans.</span></div>
+      <div class="sec-label">Report queue</div>
+      <div id="reportQueue"><span style="color:var(--dim)">No reports.</span></div>
+      <div class="row"><button class="danger" id="clearReports" type="button">Clear queue</button></div>
+    </div>
+  </div>
+
+  <p class="foot">
+    OpenChannel is a feedback prototype, not a finished product. <b>Not for life-safety or emergency use</b> — in a real emergency call 911.
+    Channels only; there are no direct messages. Voice goes peer-to-peer through the free PeerJS cloud relay; nothing is recorded or stored on a server.
+    Mute and report tools are in the user list. Free to run: static page + free signaling.
+  </p>
+</div>
+
+<dialog id="ownerDlg">
+  <h1 style="font-size:16px">Owner login</h1>
+  <p class="sub">Enter the owner code to open moderation controls on this device.</p>
+  <input type="text" id="ownerCode" placeholder="Owner code" autocomplete="off">
+  <div class="row" style="margin-top:12px">
+    <button class="big-btn" id="ownerGo" type="button" style="padding:10px">Unlock</button>
+  </div>
+  <p class="sub" id="ownerMsg"></p>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+"use strict";
+/* ---------- config ---------- */
+var APP='oc27x';
+var APP_KEY='openchannel-proto-k7f3a9d2'; /* prototype-grade signing key (public source; real enforcement needs the backend) */
+var OWNER_HASH='910a0126531cab09f7db7dcd2eb5332c0ac34aeb4d35347369021692652b2c89'; /* sha256 of the owner code; the code itself is never stored here */
+var SLOTS=12;
+var CHANNELS=[
+  {id:'dispatch', name:'Dispatch', num:'CH 1'},
+  {id:'tac1', name:'Tac 1', num:'CH 2'},
+  {id:'tac2', name:'Tac 2', num:'CH 3'},
+  {id:'oem-drill', name:'OEM Drill', num:'CH 4', training:true}
+];
+var CODES=[['10-4','Acknowledged'],['10-9','Repeat last'],['10-20','Your location?'],['10-22','Disregard'],['10-8','In service'],['10-7','Out of service']];
+var BAD=['fuck','shit','bitch','nigger','faggot','cunt','rape','kys'];
+
+/* ---------- state ---------- */
+var peer=null, mySlot=0, myName='', channel=null;
+var conns=new Map();      /* peerId -> {conn,name,muted,audioEl,talking,reports} */
+var myCalls=[];
+var micStream=null, micFailed=false;
+var tx=false, floorHolder=null, floorName='', floorIsDsp=false;
+var dispatcher=false, locked=false, ownerOnline=false, ownerPeer=null;
+var isOwner=false, offline=false;
+var bans=[];              /* lowercased names */
+var reports=[];           /* {time,from,reason,target} */
+var adminMutedUntil=0;
+
+/* ---------- dom ---------- */
+function el(id){return document.getElementById(id);}
+var joinCard=el('joinCard'), radioUI=el('radioUI'), nickInput=el('nickInput'), chanGrid=el('chanGrid'),
+    joinBtn=el('joinBtn'), joinStatus=el('joinStatus'), lcdChan=el('lcdChan'), lcdStatus=el('lcdStatus'),
+    led=el('led'), ptt=el('ptt'), pttHint=el('pttHint'), dspBtn=el('dspBtn'), leaveBtn=el('leaveBtn'),
+    lockNote=el('lockNote'), codesGrid=el('codesGrid'), logBox=el('log'), usersBox=el('users'),
+    oemBanner=el('oemBanner'), toastBox=el('toast'), gearBtn=el('gearBtn'),
+    ownerDlg=el('ownerDlg'), ownerCode=el('ownerCode'), ownerGo=el('ownerGo'), ownerMsg=el('ownerMsg'),
+    lockBtn=el('lockBtn'), standbyBtn=el('standbyBtn'), banList=el('banList'), reportQueue=el('reportQueue'),
+    clearReports=el('clearReports');
+var pickedChan=null;
+
+/* ---------- storage ---------- */
+function save(k,v){ try{ localStorage.setItem('oc27:'+k, JSON.stringify(v)); }catch(e){} }
+function load(k,d){ try{ var v=localStorage.getItem('oc27:'+k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+
+/* ---------- crypto ---------- */
+function sha256hex(s){
+  if(!crypto||!crypto.subtle) return Promise.resolve('nocrypto');
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function(b){
+    return Array.prototype.map.call(new Uint8Array(b), function(x){return ('0'+x.toString(16)).slice(-2);}).join('');
+  });
+}
+
+/* ---------- sound ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+function squelch(open){
+  var ctx=ac(); if(!ctx) return;
+  var dur=0.11, buf=ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate), d=buf.getChannelData(0);
+  for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(open?(1-i/d.length):(i/d.length))*0.5;
+  var src=ctx.createBufferSource(); src.buffer=buf;
+  var bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=open?1700:1100; bp.Q.value=0.7;
+  var g=ctx.createGain(); g.gain.value=0.4;
+  src.connect(bp); bp.connect(g); g.connect(ctx.destination); src.start();
+}
+function beep(freq,dur){
+  var ctx=ac(); if(!ctx) return;
+  var o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='square'; o.frequency.value=freq||1400; g.gain.value=0.08;
+  o.connect(g); g.connect(ctx.destination); o.start();
+  setTimeout(function(){ o.stop(); }, dur||90);
+}
+
+/* ---------- ui helpers ---------- */
+function setStatus(s){ lcdStatus.textContent=s; }
+function toast(s){ toastBox.textContent=s; toastBox.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(function(){toastBox.style.display='none';},3200); }
+function logLine(kind, who, text){
+  var t=new Date().toTimeString().slice(0,8);
+  var div=document.createElement('div');
+  var cls=kind==='sys'?'sys':(who===myName?'me':'');
+  div.innerHTML='<span class="t">'+t+'</span>'+(who?'<b class="'+cls+'"></b> ':'')+'<span></span>';
+  if(who) div.querySelector('b').textContent=who+':';
+  div.querySelector('span:last-child').textContent=text;
+  logBox.appendChild(div); logBox.scrollTop=logBox.scrollHeight;
+}
+function logSys(t){ logLine('sys',null,t); }
+
+/* ---------- join screen ---------- */
+CHANNELS.forEach(function(c){
+  var b=document.createElement('button'); b.type='button'; b.className='chan-btn';
+  b.innerHTML='<div class="n"></div><div class="d"></div>';
+  b.querySelector('.n').textContent=c.num+' · '+c.name;
+  b.querySelector('.d').textContent=c.training?'Practice net for OEM drills':'Open talk channel';
+  if(c.training){ var tag=document.createElement('span'); tag.className='tag'; tag.textContent='TRAINING ONLY'; b.querySelector('.n').appendChild(tag); }
+  b.onclick=function(){ pickedChan=c; Array.prototype.forEach.call(chanGrid.children,function(x){x.style.borderColor='';}); b.style.borderColor='var(--accent)'; joinBtn.disabled=!nickInput.value.trim(); };
+  chanGrid.appendChild(b);
+});
+nickInput.addEventListener('input', function(){ joinBtn.disabled=!(pickedChan&&nickInput.value.trim()); });
+nickInput.value=load('nick','');
+if(nickInput.value&&pickedChan) joinBtn.disabled=false;
+joinBtn.onclick=function(){
+  myName=nickInput.value.trim().slice(0,20)||('Unit '+Math.floor(Math.random()*90+10));
+  save('nick',myName);
+  joinBtn.disabled=true; joinStatus.textContent='Finding an open slot…';
+  join(pickedChan, 1);
+};
+CODES.forEach(function(pair){
+  var b=document.createElement('button'); b.type='button'; b.className='code-btn';
+  b.innerHTML='<b></b> <span></span>'; b.querySelector('b').textContent=pair[0]; b.querySelector('span').textContent=pair[1];
+  b.onclick=function(){ sendCode(pair[0],pair[1]); };
+  codesGrid.appendChild(b);
+});
+
+/* ---------- peer lifecycle ---------- */
+function slotId(i){ return APP+'-'+channel.id+'-s'+i; }
+
+function join(chan, slot){
+  channel=chan;
+  if(typeof Peer==='undefined'){ enterOffline(); return; }
+  if(slot>SLOTS){ joinStatus.textContent='Channel is full right now — try another channel.'; joinBtn.disabled=false; return; }
+  var p, settled=false;
+  try{ p=new Peer(slotId(slot)); }catch(e){ enterOffline(); return; }
+  var to=setTimeout(function(){ if(!settled){ settled=true; try{p.destroy();}catch(e){} join(chan,slot+1); } },4500);
+  p.on('open', function(){
+    if(settled) return; settled=true; clearTimeout(to);
+    peer=p; mySlot=slot; wirePeer(); enterRadio(); scan();
+    setInterval(scan,15000);
+  });
+  p.on('error', function(e){
+    if(settled) return;
+    if(e.type==='unavailable-id'){ settled=true; clearTimeout(to); try{p.destroy();}catch(x){} join(chan,slot+1); }
+    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){ settled=true; clearTimeout(to); try{p.destroy();}catch(x){} enterOffline(); }
+  });
+}
+
+function wirePeer(){
+  peer.on('error', function(e){ if(e.type!=='peer-unavailable') logSys('net: '+e.type); });
+  peer.on('connection', function(conn){ setupConn(conn); });
+  peer.on('call', function(call){
+    try{ call.answer(); }catch(e){}
+    call.on('stream', function(rs){ playStream(call.peer, rs); });
+    call.on('close', function(){ stopStream(call.peer); });
+    call.on('error', function(){});
+  });
+  peer.on('disconnected', function(){ try{ peer.reconnect(); }catch(e){} });
+}
+
+function scan(){
+  if(!peer||peer.destroyed) return;
+  for(var i=1;i<=SLOTS;i++){
+    if(i===mySlot) continue;
+    var id=slotId(i);
+    if(conns.has(id)) continue;
+    try{
+      var conn=peer.connect(id,{metadata:{name:myName}});
+      setupConn(conn);
+    }catch(e){}
+  }
+}
+
+function setupConn(conn){
+  conn.on('open', function(){
+    var nm=(conn.metadata&&conn.metadata.name)||'Unit';
+    conns.set(conn.peer,{conn:conn,name:nm,muted:false,audioEl:null,talking:false,reports:0});
+    try{ conn.send({t:'hello',name:myName,dsp:dispatcher}); }catch(e){}
+    renderUsers();
+  });
+  conn.on('data', function(d){ handleData(conn.peer,d); });
+  conn.on('close', function(){
+    var u=conns.get(conn.peer);
+    if(u){ logSys(u.name+' left the net'); }
+    stopStream(conn.peer); conns.delete(conn.peer);
+    if(floorHolder===conn.peer){ floorHolder=null; floorName=''; refreshFloorUI(); }
+    renderUsers();
+  });
+  conn.on('error', function(){});
+}
+
+function broadcast(obj){
+  conns.forEach(function(u){ try{ u.conn.send(obj); }catch(e){} });
+}
+
+function handleData(from,d){
+  if(!d||typeof d!=='object') return;
+  var u=conns.get(from);
+  if(d.t==='hello'){
+    if(u){ u.name=d.name||u.name; u.dsp=!!d.dsp; }
+    if(d.name && bans.indexOf(String(d.name).toLowerCase())>=0 && isOwner){ kickPeer(from,d.name); }
+    try{ var c=u&&u.conn; c&&c.send({t:'state',locked:locked,bans:bans,owner:isOwner}); }catch(e){}
+    if(d.name&&u){ checkWords(d.name,u); logSys(u.name+' joined the net'); }
+    renderUsers();
+  }
+  else if(d.t==='state'){
+    locked=!!d.locked; if(Array.isArray(d.bans)) mergeBans(d.bans);
+    if(d.owner){ ownerOnline=true; ownerPeer=from; }
+    refreshFloorUI(); renderAdmin();
+  }
+  else if(d.t==='code'){
+    if(u&&u.muted) return;
+    beep(1500,70);
+    logLine('msg', d.name||'Unit', d.code+' — '+d.label);
+  }
+  else if(d.t==='floor'){
+    if(d.on){
+      if(tx&&d.dsp&&!dispatcher){ releasePTT(true); logSys('Dispatcher took the net'); }
+      floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;
+      if(u){u.talking=true;}
+      squelch(true); refreshFloorUI(); renderUsers();
+    } else {
+      if(u){u.talking=false;}
+      if(floorHolder===from){ floorHolder=null; floorName=''; floorIsDsp=false; }
+      squelch(false); refreshFloorUI(); renderUsers();
+    }
+  }
+  else if(d.t==='owner'){
+    verifyAdmin('owner','',d.auth,function(ok){ if(ok){ ownerOnline=true; ownerPeer=from; renderAdmin(); } });
+  }
+  else if(d.t==='admin'){
+    verifyAdmin(d.cmd,d.target,d.auth,function(ok){ if(ok) applyAdmin(from,d); });
+  }
+  else if(d.t==='report'){
+    if(isOwner){
+      reports.push({time:new Date().toLocaleString(),from:d.from||'?',reason:d.reason||'',target:d.target||''});
+      saveReports(); renderAdmin(); toast('New report from '+(d.from||'a user'));
+    }
+  }
+  else if(d.t==='chat-sys'){
+    beep(1200,60); logSys(d.text||'');
+  }
+}
+
+/* ---------- floor / TX ---------- */
+function refreshFloorUI(){
+  if(tx){ led.className='led tx'; setStatus('TRANSMITTING — '+channel.name); ptt.classList.add('tx'); return; }
+  ptt.classList.remove('tx');
+  if(floorHolder){ led.className='led rx'; setStatus('RX — '+floorName+(floorIsDsp?' (dispatcher)':'')+' is talking'); }
+  else{ led.className='led'; setStatus(locked?('LOCKED — '+channel.name):('ON NET — '+channel.name+' — '+(conns.size+1)+' on channel')); }
+  var busy=!!floorHolder||locked||(Date.now()<adminMutedUntil);
+  ptt.disabled=busy&&!tx;
+  if(Date.now()<adminMutedUntil) pttHint.textContent='You were muted by the owner (10 min).';
+  else if(locked) pttHint.textContent='Channel locked by owner. Listen only.';
+  else if(floorHolder) pttHint.textContent=floorName+' is talking. Wait for the click.';
+  else pttHint.textContent='Hold the button (or spacebar) to transmit.';
+  lockNote.style.display=(locked&&!isOwner)?'inline':'none';
+}
+
+function pressPTT(){
+  if(tx) return;
+  if(Date.now()<adminMutedUntil){ toast('You are muted by the owner.'); return; }
+  if(locked&&!isOwner){ toast('Channel locked by owner.'); return; }
+  if(floorHolder&&!dispatcher){ toast('Net busy — '+floorName+' is talking'); return; }
+  if(floorHolder&&dispatcher&&floorIsDsp){ toast('Another dispatcher has the net'); return; }
+  ac();
+  if(!micStream&&!micFailed){
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+      micStream=s; startTx();
+    }).catch(function(){
+      micFailed=true; toast('No microphone on this device — listen-only mode.');
+    });
+    return;
+  }
+  if(micFailed){ toast('No microphone on this device — listen-only mode.'); return; }
+  startTx();
+}
+function startTx(){
+  tx=true; floorHolder=peer?peer.id:null; floorName=myName;
+  squelch(true);
+  broadcast({t:'floor',on:true,name:myName,dsp:dispatcher});
+  myCalls=[];
+  conns.forEach(function(u,id){
+    try{ myCalls.push(peer.call(id,micStream)); }catch(e){}
+  });
+  refreshFloorUI();
+}
+function releasePTT(yielded){
+  if(!tx) return;
+  tx=false; floorHolder=null; floorName='';
+  squelch(false);
+  broadcast({t:'floor',on:false,name:myName});
+  myCalls.forEach(function(c){ try{c.close();}catch(e){} });
+  myCalls=[];
+  refreshFloorUI();
+}
+ptt.addEventListener('mousedown',function(e){e.preventDefault();pressPTT();});
+ptt.addEventListener('touchstart',function(e){e.preventDefault();pressPTT();},{passive:false});
+['mouseup','mouseleave'].forEach(function(ev){ptt.addEventListener(ev,function(){releasePTT();});});
+ptt.addEventListener('touchend',function(e){e.preventDefault();releasePTT();});
+ptt.addEventListener('contextmenu',function(e){e.preventDefault();});
+document.addEventListener('keydown',function(e){
+  if(e.code==='Space'&&!e.repeat&&radioUI.style.display!=='none'&&document.activeElement!==nickInput&&document.activeElement!==ownerCode){ e.preventDefault(); pressPTT(); }
+});
+document.addEventListener('keyup',function(e){ if(e.code==='Space'){ releasePTT(); } });
+
+function playStream(pid,rs){
+  var u=conns.get(pid);
+  var a=document.createElement('audio'); a.autoplay=true; a.playsInline=true;
+  a.srcObject=rs; a.muted=!!(u&&u.muted);
+  document.body.appendChild(a);
+  if(u) u.audioEl=a;
+  a.play().catch(function(){});
+}
+function stopStream(pid){
+  var u=conns.get(pid);
+  if(u&&u.audioEl){ try{u.audioEl.srcObject=null; u.audioEl.remove();}catch(e){} u.audioEl=null; }
+}
+
+/* ---------- codes ---------- */
+function sendCode(code,label){
+  broadcast({t:'code',code:code,label:label,name:myName});
+  beep(1500,70);
+  logLine('msg',myName,code+' — '+label);
+}
+
+/* ---------- users / moderation (every user) ---------- */
+function renderUsers(){
+  usersBox.innerHTML='';
+  var me=document.createElement('div'); me.className='user-row';
+  me.innerHTML='<span class="nm"></span>'+(dispatcher?'<span class="badge dsp">DISPATCH</span>':'')+(isOwner?'<span class="badge own">OWNER</span>':'')+'<span class="badge">YOU</span>';
+  me.querySelector('.nm').textContent=myName;
+  usersBox.appendChild(me);
+  conns.forEach(function(u,id){
+    var r=document.createElement('div'); r.className='user-row';
+    var nm=document.createElement('span'); nm.className='nm'+(u.talking?' talking':''); nm.textContent=u.name+(u.talking?' · on air':''); r.appendChild(nm);
+    if(u.dsp){ var b=document.createElement('span'); b.className='badge dsp'; b.textContent='DISPATCH'; r.appendChild(b); }
+    var mb=document.createElement('button'); mb.type='button'; mb.textContent=u.muted?'Unmute':'Mute';
+    mb.onclick=function(){ u.muted=!u.muted; if(u.audioEl) u.audioEl.muted=u.muted; renderUsers(); toast(u.muted?('Muted '+u.name+' (only for you)'):('Unmuted '+u.name)); };
+    r.appendChild(mb);
+    var rb=document.createElement('button'); rb.type='button'; rb.textContent='Report';
+    rb.onclick=function(){ openReport(u); };
+    r.appendChild(rb);
+    if(isOwner){
+      var kb=document.createElement('button'); kb.type='button'; kb.className='warn'; kb.textContent='Kick';
+      kb.onclick=function(){ kickPeer(id,u.name); };
+      r.appendChild(kb);
+      var bb=document.createElement('button'); bb.type='button'; bb.className='warn'; bb.textContent='Ban';
+      bb.onclick=function(){ banPeer(id,u.name); };
+      r.appendChild(bb);
+    }
+    usersBox.appendChild(r);
+  });
+}
+function checkWords(name,u){
+  var low=String(name).toLowerCase();
+  for(var i=0;i<BAD.length;i++){
+    if(low.indexOf(BAD[i])>=0){
+      var rep={time:new Date().toLocaleString(),from:myName,reason:'word filter: name "'+name+'"',target:name};
+      if(isOwner){ reports.push(rep); saveReports(); renderAdmin(); toast('Word filter flagged a name'); }
+      else if(ownerOnline&&ownerPeer&&conns.get(ownerPeer)){ try{conns.get(ownerPeer).conn.send({t:'report',from:myName,reason:rep.reason,target:rep.target});}catch(e){} }
+      return;
+    }
+  }
+}
+function openReport(u){
+  var reasons=['Abusive voice or language','Spam / noise','Underage safety concern','Other'];
+  var pick=prompt('Report '+u.name+' for:\n'+reasons.map(function(r,i){return (i+1)+'. '+r;}).join('\n')+'\n\nEnter 1-4:');
+  var idx=parseInt(pick,10);
+  if(!idx||idx<1||idx>4) return;
+  var reason=reasons[idx-1];
+  var rep={time:new Date().toLocaleString(),from:myName,reason:reason,target:u.name};
+  if(isOwner){ reports.push(rep); saveReports(); renderAdmin(); toast('Report added to the queue'); }
+  else if(ownerOnline&&ownerPeer&&conns.get(ownerPeer)){
+    try{ conns.get(ownerPeer).conn.send({t:'report',from:myName,reason:reason,target:u.name}); toast('Report sent to the owner'); }catch(e){ toast('Could not reach the owner'); }
+  } else {
+    var pending=load('pendingReports',[]); pending.push(rep); save('pendingReports',pending);
+    toast('Owner not in channel — report saved on this device');
+  }
+}
+
+/* ---------- owner / admin ---------- */
+gearBtn.onclick=function(){
+  if(isOwner){ toast('Owner controls already unlocked'); return; }
+  ownerMsg.textContent=''; ownerCode.value='';
+  if(ownerDlg.showModal) ownerDlg.showModal(); else ownerDlg.setAttribute('open','');
+};
+ownerGo.onclick=function(){
+  sha256hex(ownerCode.value.trim()).then(function(h){
+    if(h===OWNER_HASH){
+      isOwner=true; document.body.classList.add('owner');
+      gearBtn.classList.add('owner'); gearBtn.textContent='Owner ✓';
+      if(ownerDlg.close) ownerDlg.close(); else ownerDlg.removeAttribute('open');
+      reports=load('reports',[]);
+      bans=load('bans:'+(channel?channel.id:''),bans);
+      announceOwner(); renderUsers(); renderAdmin(); refreshFloorUI();
+      toast('Owner controls unlocked');
+    } else {
+      ownerMsg.textContent='Wrong code.';
+    }
+  });
+};
+function announceOwner(){
+  sha256hex(APP_KEY+'|owner|').then(function(a){ broadcast({t:'owner',on:true,auth:a}); });
+}
+function verifyAdmin(cmd,target,auth,cb){
+  /* prototype-grade check: sha256(APP_KEY|cmd|target). APP_KEY ships in public source,
+     so this stops casual abuse only; real enforcement needs the small backend. */
+  sha256hex(APP_KEY+'|'+cmd+'|'+(target||'')).then(function(h){ cb(h===auth); });
+}
+function adminSend(cmd,target,value){
+  sha256hex(APP_KEY+'|'+cmd+'|'+(target||'')).then(function(a){
+    broadcast({t:'admin',cmd:cmd,target:target,value:value,auth:a});
+  });
+}
+function applyAdmin(from,d){
+  if(d.cmd==='lock'){
+    locked=!!d.value; logSys('Owner '+(locked?'locked':'unlocked')+' the channel');
+    refreshFloorUI();
+  }
+  else if(d.cmd==='mute'&&d.target===(peer&&peer.id)){
+    adminMutedUntil=Date.now()+10*60*1000; releasePTT(); refreshFloorUI();
+    toast('The owner muted you for 10 minutes');
+  }
+  else if(d.cmd==='kick'&&d.target===(peer&&peer.id)){
+    alertOrToast('You were removed from this channel by the owner');
+    leaveChannel();
+  }
+  else if(d.cmd==='ban'){
+    if(d.targetName) mergeBans([d.targetName]);
+    if(d.target===(peer&&peer.id)){ alertOrToast('You were banned from this channel'); leaveChannel(); }
+    renderAdmin();
+  }
+  else if(d.cmd==='unban'&&d.targetName){
+    bans=bans.filter(function(b){return b!==String(d.targetName).toLowerCase();});
+    if(isOwner) save('bans:'+channel.id,bans);
+    renderAdmin();
+  }
+}
+function alertOrToast(s){ toast(s); logSys(s); }
+function kickPeer(id,name){
+  adminSend('kick',id);
+  var u=conns.get(id); if(u){ try{u.conn.close();}catch(e){} }
+  conns.delete(id); renderUsers(); logSys((name||'A user')+' was kicked by the owner');
+}
+function banPeer(id,name){
+  var low=String(name).toLowerCase();
+  if(bans.indexOf(low)<0) bans.push(low);
+  save('bans:'+channel.id,bans);
+  sha256hex(APP_KEY+'|ban|'+id).then(function(a){ broadcast({t:'admin',cmd:'ban',target:id,targetName:low,auth:a}); });
+  var u=conns.get(id); if(u){ try{u.conn.close();}catch(e){} }
+  conns.delete(id); renderUsers(); renderAdmin(); logSys(name+' was banned');
+}
+function mergeBans(list){
+  list.forEach(function(n){ var low=String(n).toLowerCase(); if(bans.indexOf(low)<0) bans.push(low); });
+  if(isOwner&&channel) save('bans:'+channel.id,bans);
+}
+lockBtn.onclick=function(){
+  locked=!locked; adminSend('lock','',locked);
+  lockBtn.textContent='Lock channel: '+(locked?'ON':'off');
+  logSys('Owner '+(locked?'locked':'unlocked')+' the channel');
+  refreshFloorUI();
+};
+standbyBtn.onclick=function(){
+  broadcast({t:'chat-sys',text:'Net: all units stand by.'});
+  logSys('Net: all units stand by.');
+};
+clearReports.onclick=function(){ reports=[]; saveReports(); renderAdmin(); };
+function saveReports(){ save('reports',reports); }
+function renderAdmin(){
+  if(!isOwner) return;
+  lockBtn.textContent='Lock channel: '+(locked?'ON':'off');
+  if(bans.length){
+    banList.innerHTML='';
+    bans.forEach(function(b){
+      var d=document.createElement('div'); d.className='queue-item';
+      d.innerHTML='<span></span> ';
+      d.querySelector('span').textContent=b;
+      var ub=document.createElement('button'); ub.type='button'; ub.textContent='Unban';
+      ub.onclick=function(){ bans=bans.filter(function(x){return x!==b;}); save('bans:'+channel.id,bans);
+        sha256hex(APP_KEY+'|unban|').then(function(a){ broadcast({t:'admin',cmd:'unban',target:'',targetName:b,auth:a}); });
+        renderAdmin(); };
+      d.appendChild(ub); banList.appendChild(d);
+    });
+  } else banList.innerHTML='<span style="color:var(--dim)">No bans.</span>';
+  if(reports.length){
+    reportQueue.innerHTML='';
+    reports.slice().reverse().forEach(function(r){
+      var d=document.createElement('div'); d.className='queue-item';
+      d.innerHTML='<div class="q-t"></div><div></div>';
+      d.querySelector('.q-t').textContent=r.time+' — from '+r.from;
+      d.querySelector('div:last-child').textContent=r.reason+' · target: '+r.target;
+      reportQueue.appendChild(d);
+    });
+  } else reportQueue.innerHTML='<span style="color:var(--dim)">No reports.</span>';
+}
+
+/* ---------- enter/leave ---------- */
+function enterRadio(){
+  joinCard.style.display='none'; radioUI.style.display='block';
+  lcdChan.textContent=channel.num+' · '+channel.name.toUpperCase()+' — 146.520';
+  oemBanner.style.display=channel.training?'block':'none';
+  bans=load('bans:'+channel.id,[]);
+  logSys('You joined '+channel.name+' as '+myName+(offline?' (offline demo)':''));
+  refreshFloorUI(); renderUsers();
+  if(isOwner){ bans=load('bans:'+channel.id,bans); announceOwner(); renderAdmin(); }
+}
+function enterOffline(){
+  offline=true;
+  channel=pickedChan;
+  enterRadio();
+  setStatus('OFFLINE DEMO — signaling unreachable');
+  ptt.disabled=true; pttHint.textContent='Offline demo: signaling server unreachable, listen-only.';
+  logSys('Signaling unreachable — showing offline demo');
+}
+function leaveChannel(){
+  releasePTT();
+  myCalls.forEach(function(c){try{c.close();}catch(e){}}); myCalls=[];
+  conns.forEach(function(u){ try{u.conn.close();}catch(e){} stopStream(u.conn.peer); });
+  conns.clear();
+  if(peer){ try{peer.destroy();}catch(e){} peer=null; }
+  tx=false; floorHolder=null; locked=false; ownerOnline=false; ownerPeer=null;
+  radioUI.style.display='none'; joinCard.style.display='block';
+  joinBtn.disabled=false; joinStatus.textContent='';
+}
+leaveBtn.onclick=leaveChannel;
+dspBtn.onclick=function(){
+  dispatcher=!dispatcher;
+  dspBtn.textContent='Dispatcher mode: '+(dispatcher?'ON':'off');
+  dspBtn.className='mini-btn'+(dispatcher?' on':'');
+  broadcast({t:'hello',name:myName,dsp:dispatcher});
+  renderUsers();
+  logSys('Dispatcher mode '+(dispatcher?'on':'off'));
+};
+window.addEventListener('beforeunload',function(){ releasePTT(); });
+})();
+</script>
+</body>
+</html>
