@@ -614,16 +614,24 @@ function applyAdmin(from,d){
 function alertOrToast(s){ toast(s); logSys(s); }
 function kickPeer(id,name){
   adminSend('kick',id);
-  var u=conns.get(id); if(u){ try{u.conn.close();}catch(e){} }
-  conns.delete(id); renderUsers(); logSys((name||'A user')+' was kicked by the owner');
+  var u=conns.get(id);
+  setTimeout(function(){
+    if(u){ try{u.conn.close();}catch(e){} }
+    conns.delete(id); renderUsers();
+  },500);
+  logSys((name||'A user')+' was kicked by the owner');
 }
 function banPeer(id,name){
   var low=String(name).toLowerCase();
   if(bans.indexOf(low)<0) bans.push(low);
   save('bans:'+channel.id,bans);
   sha256hex(APP_KEY+'|ban|'+id).then(function(a){ broadcast({t:'admin',cmd:'ban',target:id,targetName:low,auth:a}); });
-  var u=conns.get(id); if(u){ try{u.conn.close();}catch(e){} }
-  conns.delete(id); renderUsers(); renderAdmin(); logSys(name+' was banned');
+  var u=conns.get(id);
+  setTimeout(function(){
+    if(u){ try{u.conn.close();}catch(e){} }
+    conns.delete(id); renderUsers();
+  },500);
+  renderAdmin(); logSys(name+' was banned');
 }
 function mergeBans(list){
   list.forEach(function(n){ var low=String(n).toLowerCase(); if(bans.indexOf(low)<0) bans.push(low); });
