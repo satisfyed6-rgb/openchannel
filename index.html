@@ -357,8 +357,8 @@ function setupConn(conn){
     var u=conns.get(conn.peer);
     if(u){ logSys(u.name+' left the net'); }
     stopStream(conn.peer); conns.delete(conn.peer);
-    if(floorHolder===conn.peer){ floorHolder=null; floorName=''; refreshFloorUI(); }
-    renderUsers();
+    if(floorHolder===conn.peer){ floorHolder=null; floorName=''; }
+    refreshFloorUI(); renderUsers();
   });
   conn.on('error', function(){});
 }
