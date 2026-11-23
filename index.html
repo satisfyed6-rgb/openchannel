@@ -274,7 +274,7 @@
         <p class="sub" style="margin-top:6px">Shown next to your name on the channels you join.</p>
       </div>
       <div class="card">
-        <div class="sec-label" style="margin-top:0">Sounds</div>
+        <div class="sec-label" style="margin-top:0">Outgoing voice changer</div><div class="status-row" id="voiceChoices" style="flex-wrap:wrap"></div><p class="sub">Normal is unchanged. Deep/high use a local pitch effect (about 50-100ms extra delay); robot/radio color your voice. Runs on this device before sending, no voice upload service. Effects are playful, not identity protection. Older devices may crackle; choose Normal if so.</p></div><div class="card"><div class="sec-label" style="margin-top:0">Sounds</div>
         <div class="sec-label">Press sound (button down)</div><div class="status-row" id="sndPressRow" style="flex-wrap:wrap"></div><div class="sec-label">Release beep (when you let go)</div>
         <div class="status-row" id="sndRelRow" style="flex-wrap:wrap"></div>
         <div class="sec-label">Incoming beep (when another unit talks)</div>
@@ -1538,6 +1538,29 @@ chatInput.addEventListener('keydown',function(e){ if(e.key==='Enter') sendChat()
 codesBtn.onclick=function(){ codesPanel.classList.toggle('hidden'); };
 
 
+/* Voice effects run locally before outgoing live audio. */
+var voiceNodes=[],voiceSource=null,voiceOsc=null;
+function voiceMode(){var v=load('voiceMode','normal');return ['normal','deep','high','robot','radio'].indexOf(v)>=0?v:'normal';}
+function applyVoice(){
+ if(!micRaw||!micGate)return;var ctx=ac();voiceNodes.forEach(function(n){try{n.disconnect();}catch(e){}});voiceNodes=[];if(voiceOsc){try{voiceOsc.stop();}catch(e){}voiceOsc=null;}
+ var source=ctx.createMediaStreamSource(micRaw),tail=source;voiceNodes.push(source);var mode=voiceMode();
+ if(mode==='deep'||mode==='high'){
+  /* Two overlapping delay grains. ScriptProcessor fallback works without a server/worklet file. */
+  var size=16384,ring=new Float32Array(size),write=0,phase=0,grain=Math.round(ctx.sampleRate*.055),ratio=mode==='deep'?.76:1.32;
+  var proc=ctx.createScriptProcessor(1024,1,1);voiceNodes.push(proc);
+  function sample(pos){var a=Math.floor(pos),f=pos-a;return ring[(a+size)%size]*(1-f)+ring[(a+1+size)%size]*f;}
+  proc.onaudioprocess=function(e){var input=e.inputBuffer.getChannelData(0),out=e.outputBuffer.getChannelData(0);for(var i=0;i<input.length;i++){ring[write]=input[i];var p1=phase,p2=(phase+.5)%1;var d1=grain*(ratio<1?p1:1-p1)+32,d2=grain*(ratio<1?p2:1-p2)+32;var w1=.5-.5*Math.cos(2*Math.PI*p1),w2=.5-.5*Math.cos(2*Math.PI*p2);out[i]=sample(write-d1+size)*w1+sample(write-d2+size)*w2;write=(write+1)%size;phase=(phase+Math.abs(1-ratio)/grain)%1;}};
+  tail.connect(proc);tail=proc;
+ }else if(mode==='robot'){
+  var mult=ctx.createGain();mult.gain.value=0;var osc=ctx.createOscillator();osc.type='sine';osc.frequency.value=45;osc.connect(mult.gain);osc.start();voiceOsc=osc;tail.connect(mult);tail=mult;voiceNodes.push(mult);
+ }else if(mode==='radio'){
+  var hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=400;var lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;var ws=ctx.createWaveShaper();ws.curve=makeDistortionCurve(9);tail.connect(hp);hp.connect(lp);lp.connect(ws);tail=ws;voiceNodes.push(hp,lp,ws);
+ }
+ tail.connect(micGate);
+}
+function voiceSelect(value){save('voiceMode',value);applyVoice();document.querySelectorAll('[data-voice]').forEach(function(b){b.classList.toggle('sel',b.dataset.voice===value);});toast('Outgoing voice: '+value+'. Processed on this device.');}
+['normal','deep','high','robot','radio'].forEach(function(mode){var b=document.createElement('button');b.type='button';b.className='st-btn'+(voiceMode()===mode?' sel':'');b.dataset.voice=mode;b.textContent=mode.charAt(0).toUpperCase()+mode.slice(1);b.onclick=function(){voiceSelect(mode);};el('voiceChoices').appendChild(b);});
+
 /* Team tools: live peer exchange, device-local notes and own hours. */
 var toolPolls={},toolCheckins={},toolSeq=0;
 function toolId(){return agRandom(8);}
@@ -1931,7 +1954,7 @@ function ensureMic(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ micFailed=true; return; }
   ensureMic.pending=true;
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
-    ensureMic.pending=false; micRaw=s;var ctx=ac(),src=ctx.createMediaStreamSource(s),gate=ctx.createGain(),dest=ctx.createMediaStreamDestination();gate.gain.value=0;src.connect(gate);gate.connect(dest);micGate=gate;micStream=dest.stream;warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();broadcast({t:'mic-ready'});setTimeout(warmAllPeers,100);
+    ensureMic.pending=false; micRaw=s;var ctx=ac(),src=ctx.createMediaStreamSource(s),gate=ctx.createGain(),dest=ctx.createMediaStreamDestination();gate.gain.value=0;gate.connect(dest);micGate=gate;micStream=dest.stream;applyVoice();warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();broadcast({t:'mic-ready'});setTimeout(warmAllPeers,100);
   }).catch(function(){
     ensureMic.pending=false; micFailed=true;toast('Microphone blocked or unavailable. Tap TALK for help.');
   });
@@ -2232,7 +2255,7 @@ function leaveChannel(){
   conns.clear();
   warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();
   if(micStream){micStream.getTracks().forEach(function(t){t.stop();});micStream=null;}
-  if(micRaw){micRaw.getTracks().forEach(function(t){t.stop();});micRaw=null;}micGate=null;
+  if(micRaw){micRaw.getTracks().forEach(function(t){t.stop();});micRaw=null;}micGate=null;voiceNodes.forEach(function(n){try{n.disconnect();}catch(e){}});voiceNodes=[];if(voiceOsc){try{voiceOsc.stop();}catch(e){}voiceOsc=null;}
   if(peer){ try{peer.destroy();}catch(e){} peer=null; }
   tx=false; floorHolder=null; locked=false; ownerOnline=false; ownerPeer=null; chanOwner=false; banUids={};
   stopAdvertising();
