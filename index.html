@@ -193,7 +193,7 @@
       <div class="card" style="margin-top:8px"><button class="big-act" id="homeInstall" style="width:100%">Install as app</button><p class="sub" id="installHelp" style="margin:8px 0 0">Free. Open from your home screen, no app store needed. On iPhone: Share, then Add to Home Screen.</p></div>
       <div class="row" style="gap:8px"><button class="big-act alt" id="homeJoin">Join a channel</button><button class="big-act" id="homeCreate">Create a channel</button></div>
       <button class="chan-item" id="homeEvent" style="margin-top:12px"><span class="ci">E</span><span><span class="cn">Event staff</span><br><span class="cd">Your crew, your channel. No agency signup.</span></span><span class="arr">›</span></button>
-      <p class="sub">Hold TALK to speak. Live only, no voice recordings.</p>
+      <p class="sub">Hold TALK to speak. Listeners can save incoming voice locally for replay.</p>
       <div class="sec-label">Featured</div>
       <div id="chanList"></div>
       <div class="sec-label">My channels (this device)</div>
@@ -220,7 +220,7 @@
         <div class="sec-label" style="margin-top:0">My agency networks</div>
         <div id="agApproved"><span style="color:var(--dim)">Checking&hellip;</span></div>
       </div>
-      <div class="card"><div class="sec-label" style="margin-top:0">Redeem invitation</div><input id="agInviteCode" placeholder="Invitation code or link" style="width:100%"><button class="mini-btn" id="agRedeem" style="padding:10px;margin-top:8px">Join invited agency</button><p class="sub" id="agAccessMsg"></p><p class="sub">Secret-based live audio, not server-authenticated media. Removing a member rotates the key atomically. Online apps disconnect on the key update, usually within seconds; old or modified peers may keep talking to each other on the old key, but cannot follow the new channel. No audio is recorded.</p></div>
+      <div class="card"><div class="sec-label" style="margin-top:0">Redeem invitation</div><input id="agInviteCode" placeholder="Invitation code or link" style="width:100%"><button class="mini-btn" id="agRedeem" style="padding:10px;margin-top:8px">Join invited agency</button><p class="sub" id="agAccessMsg"></p><p class="sub">Secret-based live audio, not server-authenticated media. Removing a member rotates the key atomically. Online apps disconnect on the key update, usually within seconds; old or modified peers may keep talking to each other on the old key, but cannot follow the new channel. Incoming voice may be saved on listeners' devices for replay, never uploaded as a recording.</p></div>
       <details class="card"><summary>Account and agency admin</summary><p class="sub">Account ID, share with the verifier only:</p><div id="agAccountId" style="overflow-wrap:anywhere;font-size:11px"></div><input id="agLoadId" placeholder="Agency ID (existing members only)" style="width:100%"><button class="mini-btn" id="agLoad">Load my agency</button><div class="row"><input type="number" id="agInviteUses" value="1" min="1" max="200" aria-label="Invite max uses" style="width:45%"><input type="number" id="agInviteDays" value="7" min="1" max="30" aria-label="Invite expiry days" style="width:45%"></div><p class="sub">Invite uses / days until expiry. Limit is per invite, not a hard agency-wide cap.</p><div id="agManage"></div><div id="agVerifyPanel" class="hidden"><h2>App owner verification</h2><p class="sub">Verify the agency out-of-band before submitting.</p><input id="agVerifyName" placeholder="Verified agency name" style="width:100%"><input id="agVerifyUid" placeholder="Owner account ID" style="width:100%"><button id="agVerify" class="mini-btn">Verify and assign owner</button></div></details>
       <div class="card">
         <div class="sec-label" style="margin-top:0">Request an agency channel set</div>
@@ -297,7 +297,7 @@
       </div>
       <p class="foot">
         OpenChannel is a consumer demo prototype, not a finished product. <b>Not for life-safety or emergency use</b> &mdash; in a real emergency call 911.
-        Voice goes peer-to-peer through the free PeerJS cloud relay. Live only: nothing is recorded, saved, or stored anywhere. Free to run: static page + free signaling.
+        Voice goes peer-to-peer through the free PeerJS cloud relay. Incoming voice can be saved on each listener's device for replay. No recording uploads. Delete your copies in Replay &amp; Busy queue. Free to run: static page + free signaling.
       </p>
     </div>
 
@@ -366,6 +366,7 @@
       </div>
     </div>
 
+    <details class="card" id="replayPanel"><summary>Replay &amp; Busy queue</summary><p class="sub">Incoming voice can be saved on this device only, up to 20 per channel. Busy mutes live voice and queues received messages while this app stays connected. Not offline delivery. Other listeners may keep their own copies.</p><button class="mini-btn" id="replayToggle">Save incoming on this device: on</button><button class="mini-btn" id="replayClear">Delete this channel</button><button class="mini-btn" id="replayClearAll">Delete all saved voice</button><p class="sub" id="replayMsg"></p><div id="replayList"></div></details>
     <div class="card hidden" id="codesPanel">
       <div class="row" style="gap:8px">
         <button class="mini-btn on" id="tabStd" type="button">Standard 10-codes</button>
@@ -393,7 +394,7 @@
 
     <p class="foot">
       Prototype. <b>Not for life-safety or emergency use</b> — call 911 in a real emergency.
-      Live only: nothing is recorded or stored. Missed a call? Ask for a 10-9 (repeat).
+      Listeners may save incoming voice locally. Open Replay &amp; Busy queue to listen later or delete your copies.
     </p>
   </div>
 </div>
@@ -456,7 +457,7 @@
   <p class="sub" id="ownerMsg"></p>
 </dialog>
 
-<dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Audio is live only, never recorded. Your microphone stays muted between transmissions. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
+<dialog id="replayNotice"><h1 style="font-size:18px">Voice can be saved by listeners</h1><p class="sub">Incoming transmissions are saved locally for replay, up to 20 per channel on each listener's device. Nothing is uploaded as a recording. Busy mode mutes live voice and keeps a listen-later queue while connected. You can turn saving off and delete your copies, but cannot delete copies on other devices. Do not share sensitive information.</p><p class="sub">Recordings are limited to 60 seconds each. Browser storage may be cleared or fail. Legacy clients are not recorded by this version.</p><button class="big-act" id="replayAgree">Understand &amp; join</button><button class="mini-btn" id="replayCancel">Cancel</button></dialog><dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Listeners may save incoming voice locally for replay. No recordings are uploaded. Your microphone stays muted between transmissions. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -647,6 +648,7 @@ function clickFx(ctx){
 }
 /* squelch: open = short hiss as the carrier arrives; close = the classic noise-crash tail + release click */
 function squelch(open){
+  if(busyAudio())return;
   if(!radioFxOn) return;
   if(!open&&typeof sndSel==='function'&&sndSel('rel')!=='orig') return;
   if(open){ if(playSfx('click',{gain:0.9})) return; }
@@ -722,6 +724,7 @@ function keyChirp(){
 }
 /* courtesy tone after a unit unkeys, like the repeater beep */
 function rogerBeep(){
+  if(busyAudio())return;
   if(!radioFxOn) return;
   setTimeout(function(){
     if(playSfx('release',{gain:0.9})) return;
@@ -732,6 +735,7 @@ function rogerBeep(){
    talking (sfx-incoming.mp3, Pixabay Content License placeholder - swap the file to
    change the sound). Fallback: synthesized double 2300Hz beep. */
 function incomingChirp(){
+  if(busyAudio())return;
   if(!radioFxOn) return;
   setTimeout(function(){
     if(playSfx('incoming',{gain:0.95})) return;
@@ -747,6 +751,7 @@ function makeDistortionCurve(k){
 /* static underlay + crackle while a unit is on air */
 var staticSrc=null, staticGain=null, popTimer=null;
 function startStatic(){
+  if(busyAudio())return;
   if(!radioFxOn) return;
   var h=playSfx('static',{loop:true,gain:0.5});
   if(h){ stopStatic(); staticSrc=h.src; staticGain=h.g; return; }
@@ -1383,7 +1388,7 @@ noteInput.addEventListener('change',function(){
 });
 Array.prototype.forEach.call(el('statusRow').querySelectorAll('.st-btn'), function(b){
   if(b.dataset.st===myStatus) markStatus(b);
-  b.onclick=function(){ markStatus(b); myStatus=b.dataset.st; save('status',myStatus); broadcast({t:'status',status:myStatus,note:myNote,name:myName}); };
+  b.onclick=function(){ markStatus(b); myStatus=b.dataset.st; save('status',myStatus);conns.forEach(function(u){if(u.audioGain)u.audioGain.gain.value=(!busyAudio()&&u.talking&&!u.muted)?1:0;if(u.audioEl)u.audioEl.muted=busyAudio()||u.muted||!u.talking;});if(busyAudio())stopStatic(); broadcast({t:'status',status:myStatus,note:myNote,name:myName}); };
 });
 function markStatus(btn){
   Array.prototype.forEach.call(el('statusRow').querySelectorAll('.st-btn'), function(x){x.classList.remove('sel');});
@@ -1533,10 +1538,44 @@ chatInput.addEventListener('keydown',function(e){ if(e.key==='Enter') sendChat()
 codesBtn.onclick=function(){ codesPanel.classList.toggle('hidden'); };
 
 
+/* Device-local incoming replay. No audio uploads. */
+var replayDB=null,replayStreams=new Map(),replayRecorders=new Map(),replayAudio=null,replayPendingJoin=null;
+function replayEnabled(){return load('localReplay',true);}
+function replayOpen(){if(replayDB)return Promise.resolve(replayDB);return new Promise(function(resolve,reject){var r=indexedDB.open('OpenChannelLocal',1);r.onupgradeneeded=function(){var d=r.result;if(!d.objectStoreNames.contains('voice')){var s=d.createObjectStore('voice',{keyPath:'id'});s.createIndex('channel','channel');}};r.onsuccess=function(){replayDB=r.result;resolve(replayDB);};r.onerror=function(){reject(r.error);};});}
+function replayRows(){return replayOpen().then(function(db){return new Promise(function(resolve,reject){var t=db.transaction('voice','readonly'),r=t.objectStore('voice').getAll();r.onsuccess=function(){resolve(r.result||[]);};r.onerror=function(){reject(r.error);};});});}
+function replayDeleteIds(ids){return replayOpen().then(function(db){return new Promise(function(resolve,reject){var t=db.transaction('voice','readwrite'),s=t.objectStore('voice');ids.forEach(function(id){s.delete(id);});t.oncomplete=resolve;t.onerror=function(){reject(t.error);};});});}
+function replaySave(rec){return replayOpen().then(function(db){return new Promise(function(resolve,reject){var t=db.transaction('voice','readwrite');t.objectStore('voice').put(rec);t.oncomplete=resolve;t.onerror=function(){reject(t.error);};});}).then(function(){return replayRows();}).then(function(rows){rows.sort(function(a,b){return b.ts-a.ts;});var counts={},bytes=0;return replayDeleteIds(rows.filter(function(r,i){counts[r.channel]=(counts[r.channel]||0)+1;bytes+=r.blob.size;return counts[r.channel]>20||i>=100||bytes>25*1024*1024;}).map(function(r){return r.id;}));}).then(replayRender).catch(function(){el('replayMsg').textContent='Could not save replay. Browser storage may be full or unavailable.';});}
+function replayStart(pid){
+ if(!channel||!replayEnabled()||!load('replayNotice39',false)||typeof MediaRecorder==='undefined')return;
+ var u=conns.get(pid),rs=replayStreams.get(pid);if(!u||!u.replayAware||!rs||replayRecorders.has(pid))return;
+ try{var type=['audio/webm;codecs=opus','audio/mp4','audio/webm'].filter(function(x){return MediaRecorder.isTypeSupported(x);})[0];var mr=new MediaRecorder(rs,type?{mimeType:type,audioBitsPerSecond:24000}:undefined),parts=[],bytes=0,cid=channel.id,nm=u.name,start=Date.now(),queued=myStatus==='Busy';
+ var state={mr:mr,timer:null};replayRecorders.set(pid,state);
+ mr.ondataavailable=function(e){if(e.data.size){parts.push(e.data);bytes+=e.data.size;if(bytes>2*1024*1024&&mr.state==='recording')mr.stop();}};
+ mr.onstop=function(){clearTimeout(state.timer);replayRecorders.delete(pid);if(parts.length&&bytes<=2*1024*1024&&replayEnabled()){replaySave({id:agRandom(12),channel:cid,name:nm,ts:start,duration:Math.min(60,(Date.now()-start)/1000),queued:queued,blob:new Blob(parts,{type:mr.mimeType})});}};
+ mr.start(250);state.timer=setTimeout(function(){if(mr.state==='recording')mr.stop();},60000);
+ }catch(e){el('replayMsg').textContent='Replay recording is not supported by this browser.';}
+}
+function replayStop(pid){var s=replayRecorders.get(pid);if(s&&s.mr.state==='recording'){try{s.mr.stop();}catch(e){}}}
+function replayStopAll(){replayRecorders.forEach(function(s,pid){replayStop(pid);});replayStreams.clear();if(replayAudio){replayAudio.pause();replayAudio=null;}}
+function replayRender(){
+ var box=el('replayList');if(!box)return;box.textContent='';el('replayToggle').textContent='Save incoming on this device: '+(replayEnabled()?'on':'off');
+ if(!channel)return;var cid=channel.id;
+ replayRows().then(function(rows){if(!channel||channel.id!==cid)return;rows=rows.filter(function(r){return r.channel===cid;}).sort(function(a,b){return b.ts-a.ts;});el('replayMsg').textContent=rows.length+' saved here · '+rows.filter(function(r){return r.queued;}).length+' queued while Busy';
+ rows.forEach(function(r){var line=document.createElement('div');line.className='row';line.style.cssText='margin-top:8px;gap:6px;flex-wrap:wrap';var b=agButton((r.queued?'Queued · ':'')+r.name+' · '+new Date(r.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+' · '+Math.round(r.duration)+'s',function(){if(replayAudio)replayAudio.pause();var url=URL.createObjectURL(r.blob);replayAudio=new Audio(url);replayAudio.onended=function(){URL.revokeObjectURL(url);};replayAudio.play().then(function(){if(r.queued){r.queued=false;replaySave(r);}}).catch(function(){el('replayMsg').textContent='Tap again to play audio.';});},line);agButton('Delete',function(){replayDeleteIds([r.id]).then(replayRender);},line);box.appendChild(line);});
+ }).catch(function(){el('replayMsg').textContent='Local storage unavailable. Replay not saved.';});
+}
+el('replayToggle').onclick=function(){save('localReplay',!replayEnabled());if(!replayEnabled())replayRecorders.forEach(function(s,pid){replayStop(pid);});replayRender();broadcast({t:'replay-info',enabled:replayEnabled()});};
+el('replayClear').onclick=function(){if(!channel)return;var cid=channel.id;replayRows().then(function(r){return replayDeleteIds(r.filter(function(x){return x.channel===cid;}).map(function(x){return x.id;}));}).then(replayRender);};
+el('replayClearAll').onclick=function(){replayRows().then(function(r){return replayDeleteIds(r.map(function(x){return x.id;}));}).then(replayRender);};
+el('replayAgree').onclick=function(){save('replayNotice39',true);closeDlg(el('replayNotice'));var fn=replayPendingJoin;replayPendingJoin=null;if(fn)fn();};
+el('replayCancel').onclick=function(){replayPendingJoin=null;closeDlg(el('replayNotice'));};
+function busyAudio(){return myStatus==='Busy';}
+
 /* ---------- peer lifecycle ---------- */
 function slotId(i){ return APP+'-'+channel.id+'-s'+i; }
 
 function startJoin(chan, preclaimed){
+  if(!load('replayNotice39',false)){replayPendingJoin=function(){startJoin(chan,preclaimed);};openDlg(el('replayNotice'));return;}
   myName=(nickInput.value.trim().slice(0,20))||('Unit '+Math.floor(Math.random()*90+10));
   nickInput.value=myName; save('nick',myName);
   ac(); sfxLoad(); friendlyMic();
@@ -1552,6 +1591,7 @@ function startJoin(chan, preclaimed){
 }
 function proceedJoin(chan, preclaimed){
   channel=chan;
+  replayRender();
   agWatchSession(chan);
   if(chan.id.charAt(0)==='r') toast('Channel ID: OC-'+chan.id.slice(1,17));
   homeView.classList.add('hidden'); chanView.classList.remove('hidden');
@@ -1644,7 +1684,7 @@ function setupConn(conn){
     }
     var nm=(conn.metadata&&conn.metadata.name)||'Unit';
     conns.set(conn.peer,{conn:conn,name:nm,status:(conn.metadata&&conn.metadata.status)||'Available',uid:(conn.metadata&&conn.metadata.uid)||null,muted:false,audioEl:null,talking:false,scan:!!(conn.metadata&&conn.metadata.scan)});
-    try{ conn.send({t:'hello',name:myName,status:myStatus,note:myNote,dsp:dispatcher,uid:fbUid}); }catch(e){}
+    try{ conn.send({t:'hello',name:myName,status:myStatus,note:myNote,dsp:dispatcher,uid:fbUid,replayAware:true}); }catch(e){}
     /* channel self-announce: probes and joiners learn the channel meta race-free */
     if(channel&&channel.user){ try{ conn.send(chanAnnounce()); }catch(e){} }
     warmPeer(conn.peer);
@@ -1654,7 +1694,7 @@ function setupConn(conn){
   conn.on('close', function(){
     var u=conns.get(conn.peer);
     if(u&&!u.scan){ feedSys('<b>'+esc(u.name)+'</b> left the net'); }
-    stopStream(conn.peer); conns.delete(conn.peer);
+    replayStop(conn.peer);replayStreams.delete(conn.peer);stopStream(conn.peer); conns.delete(conn.peer);
     if(floorHolder===conn.peer){ floorHolder=null; floorName=''; endLiveRow(); }
     refreshFloorUI(); renderUsers();
   });
@@ -1669,12 +1709,14 @@ function handleData(from,d,conn){
   if(!d||typeof d!=='object') return;
   var u=conns.get(from);
   if(d.t==='hello'){
+    if(u)u.replayAware=d.replayAware===true;
     if(u){ u.name=d.name||u.name; u.dsp=!!d.dsp; u.status=d.status||u.status; if(d.note!==undefined) u.note=d.note; if(d.uid) u.uid=d.uid; if(d.scan){ u.scan=true; refreshFloorUI(); } }
     if(d.name && bans.indexOf(String(d.name).toLowerCase())>=0 && hasMod()){ kickPeer(from,d.name); }
     try{ var c=u&&u.conn; c&&c.send({t:'state',locked:locked,bans:bans,owner:hasMod()}); }catch(e){}
     if(d.name&&u&&!d.scan&&!u.scan){ checkWords(d.name); feedSys('<b>'+esc(u.name)+'</b> joined the net'); }
     renderUsers();
   }
+  else if(d.t==='replay-info'){if(u)u.replayAware=true;}
   else if(d.t==='status'){
     if(u){ u.status=d.status||u.status; if(d.note!==undefined) u.note=d.note; renderUsers(); }
   }
@@ -1729,13 +1771,14 @@ function handleData(from,d,conn){
   else if(d.t==='floor'){
     if(d.on){
       if(tx&&d.dsp&&!dispatcher){ releasePTT(true); feedSys('Dispatcher took the net'); }
-      floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;
-      if(u){u.talking=true;if(u.audioGain)u.audioGain.gain.value=u.muted?0:1;if(u.audioEl)u.audioEl.muted=!!u.muted;}
+      floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;replayStart(from);
+      if(u){u.talking=true;if(u.audioGain)u.audioGain.gain.value=(u.muted||busyAudio())?0:1;if(u.audioEl)u.audioEl.muted=!!u.muted||busyAudio();}
       buzz(18);
       try{ if(navigator.vibrate) navigator.vibrate([140,70,140]); }catch(e){}
       incomingAlert(floorName);
       squelch(true); incomingChirp(); startStatic(); startLiveRow(floorName); refreshFloorUI(); renderUsers();
     } else {
+      replayStop(from);
       if(u){u.talking=false;if(u.audioGain)u.audioGain.gain.value=0;if(u.audioEl)u.audioEl.muted=true;}
       if(floorHolder===from){ floorHolder=null; floorName=''; floorIsDsp=false; }
       stopStatic(); squelch(false); rogerBeep(); endLiveRow(); endIncomingAlert(); refreshFloorUI(); renderUsers();
@@ -1909,6 +1952,7 @@ document.addEventListener('keydown',function(e){
 document.addEventListener('keyup',function(e){ if(e.code==='Space'){ releasePTT(); } });
 
 function playStream(pid,rs){
+  replayStreams.set(pid,rs);if(floorHolder===pid)replayStart(pid);
   var u=conns.get(pid);
   stopStream(pid);
   var sink=new Audio();sink.srcObject=rs;sink.autoplay=true;sink.volume=0;sink.play().catch(function(){});if(u)u.decodeSink=sink;
@@ -1925,14 +1969,14 @@ function playStream(pid,rs){
       var post=ctx.createBiquadFilter(); post.type='lowpass'; post.frequency.value=3200;
       var comp=ctx.createDynamicsCompressor();
       comp.threshold.value=-18; comp.knee.value=3; comp.ratio.value=12; comp.attack.value=0.002; comp.release.value=0.08;
-      var g=ctx.createGain(); g.gain.value=(!u||u.muted||!u.talking)?0:1;
+      var g=ctx.createGain(); g.gain.value=(!u||u.muted||!u.talking||busyAudio())?0:1;
       src.connect(hp); hp.connect(lp); lp.connect(pre); pre.connect(ws); ws.connect(post); post.connect(comp); comp.connect(g); g.connect(ctx.destination);
       if(u){ u.audioGain=g; u.audioNodes=[src,hp,lp,pre,ws,post,comp,g]; }
       return;
     }catch(e){}
   }
   var a=document.createElement('audio'); a.autoplay=true; a.playsInline=true;
-  a.srcObject=rs; a.muted=!u||u.muted||!u.talking;
+  a.srcObject=rs; a.muted=!u||u.muted||!u.talking||busyAudio();
   document.body.appendChild(a);
   if(u) u.audioEl=a;
   a.play().catch(function(){});
@@ -1975,7 +2019,7 @@ function renderUsers(){
     ab.onclick=function(){ sendAlert(id,u.name); };
     r.appendChild(ab);
     var mb=document.createElement('button'); mb.type='button'; mb.textContent=u.muted?'Unmute':'Mute';
-    mb.onclick=function(){ u.muted=!u.muted; if(u.audioEl) u.audioEl.muted=u.muted; if(u.audioGain) u.audioGain.gain.value=u.muted?0:1; renderUsers(); toast(u.muted?('Muted '+u.name+' (only for you)'):('Unmuted '+u.name)); };
+    mb.onclick=function(){ u.muted=!u.muted; if(u.audioEl) u.audioEl.muted=u.muted; if(u.audioGain) u.audioGain.gain.value=(u.muted||busyAudio())?0:1; renderUsers(); toast(u.muted?('Muted '+u.name+' (only for you)'):('Unmuted '+u.name)); };
     r.appendChild(mb);
     var rb=document.createElement('button'); rb.type='button'; rb.textContent='Report';
     rb.onclick=function(){ openReport(u); };
@@ -2153,6 +2197,7 @@ function enterOffline(){
   feedSys('Signaling unreachable — showing offline demo');
 }
 function leaveChannel(){
+  replayStopAll();
   if(agSessionUnsub){agSessionUnsub();agSessionUnsub=null;}
   releasePTT();
   myCalls.forEach(function(c){try{c.close();}catch(e){}}); myCalls=[];
@@ -2182,7 +2227,7 @@ dspBtn.onclick=function(){
   dispatcher=!dispatcher;
   dspBtn.textContent='Dispatcher: '+(dispatcher?'ON':'off');
   dspBtn.className='mini-btn'+(dispatcher?' on':'');
-  broadcast({t:'hello',name:myName,status:myStatus,dsp:dispatcher,uid:fbUid});
+  broadcast({t:'hello',name:myName,status:myStatus,dsp:dispatcher,uid:fbUid,replayAware:true});
   renderUsers();
   feedSys('Dispatcher mode '+(dispatcher?'on':'off'));
 };
