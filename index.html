@@ -274,7 +274,7 @@
         <div class="status-row" id="sndRelRow"></div>
         <div class="sec-label">Incoming beep (when another unit talks)</div>
         <div class="status-row" id="sndIncRow"></div>
-        <p class="sub" style="margin-top:6px">Tap a sound to pick it and hear it. Original is the default.</p>
+        <p class="sub" style="margin-top:6px">Tap a sound to pick it and hear it. Defaults: release Clip 1, incoming Clip 4.</p>
       </div>
       <div class="card">
         <div class="sec-label" style="margin-top:0">Township & official agencies</div>
@@ -1409,11 +1409,11 @@ function markStatus(btn){
   Array.prototype.forEach.call(el('statusRow').querySelectorAll('.st-btn'), function(x){x.classList.remove('sel');});
   btn.classList.add('sel');
 }
-/* ---------- custom beeps: owner-supplied clips, selectable per sound; Original stays the default ---------- */
+/* ---------- custom beeps: owner-supplied clips, selectable per sound; Defaults: release Clip 1, incoming Clip 4 ---------- */
 var USER_CLIPS={clip1:'beeps/clip1.mp3',clip2:'beeps/clip2.mp3',clip3:'beeps/clip3.mp3',clip4:'beeps/clip4.mp3'};
 var SND_ORIG={rel:'sfx-release.mp3',inc:'sfx-incoming.mp3'};
 var SND_LABELS={orig:'Original',clip1:'Clip 1',clip2:'Clip 2',clip3:'Clip 3',clip4:'Clip 4'};
-function sndSel(which){ var s=load('snd'+which,'orig'); return (s==='orig'||USER_CLIPS[s])?s:'orig'; }
+function sndSel(which){ var def=which==='rel'?'clip1':'clip4'; var s=load('snd'+which,def); return (s==='orig'||USER_CLIPS[s])?s:def; }
 function sndApply(which){
   var sel=sndSel(which), key=(which==='rel')?'release':'incoming';
   var file=(sel==='orig')?SND_ORIG[which]:USER_CLIPS[sel];
