@@ -366,7 +366,7 @@
       </div>
     </div>
 
-    <details class="card" id="replayPanel"><summary>Replay &amp; Busy queue</summary><p class="sub">Incoming voice can be saved on this device only, up to 20 per channel. Busy mutes live voice and queues received messages while this app stays connected. Not offline delivery. Other listeners may keep their own copies.</p><button class="mini-btn" id="replayToggle">Save incoming on this device: on</button><button class="mini-btn" id="replayClear">Delete this channel</button><button class="mini-btn" id="replayClearAll">Delete all saved voice</button><p class="sub" id="replayMsg"></p><div id="replayList"></div></details>
+    <details class="card" id="teamTools"><summary>Team tools: polls, check-in, notes</summary><p class="sub">Live peers only. Polls and roster disappear on reload and do not sync to late joiners. Names and votes are not verified identities. Your hours and notes stay on this device. Not payroll or an attendance record.</p><div class="sec-label">Ask the channel</div><input id="toolQuestion" maxlength="140" placeholder="Yes/no question" style="width:100%"><button class="mini-btn" id="toolPollGo">Send poll</button><div id="toolPolls"></div><div class="sec-label">Event check-in</div><button class="mini-btn" id="toolIn">Check in</button><button class="mini-btn" id="toolOut">Check out</button><div id="toolRoster"></div><p class="sub" id="toolHours"></p><button class="mini-btn" id="toolHoursDelete">Delete my local hours</button><div class="sec-label">My private channel note</div><textarea id="toolNote" maxlength="4000" rows="4" style="width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px" placeholder="Saved only on this device. Never broadcast."></textarea><button class="mini-btn" id="toolNoteSave">Save note</button><button class="mini-btn" id="toolNoteDelete">Delete note</button></details><details class="card" id="replayPanel"><summary>Replay &amp; Busy queue</summary><p class="sub">Incoming voice can be saved on this device only, up to 20 per channel. Busy mutes live voice and queues received messages while this app stays connected. Not offline delivery. Other listeners may keep their own copies.</p><button class="mini-btn" id="replayToggle">Save incoming on this device: on</button><button class="mini-btn" id="replayClear">Delete this channel</button><button class="mini-btn" id="replayClearAll">Delete all saved voice</button><p class="sub" id="replayMsg"></p><div id="replayList"></div></details>
     <div class="card hidden" id="codesPanel">
       <div class="row" style="gap:8px">
         <button class="mini-btn on" id="tabStd" type="button">Standard 10-codes</button>
@@ -1538,6 +1538,32 @@ chatInput.addEventListener('keydown',function(e){ if(e.key==='Enter') sendChat()
 codesBtn.onclick=function(){ codesPanel.classList.toggle('hidden'); };
 
 
+/* Team tools: live peer exchange, device-local notes and own hours. */
+var toolPolls={},toolCheckins={},toolSeq=0;
+function toolId(){return agRandom(8);}
+function toolChannelKey(){return channel?channel.id:'';}
+function toolRender(){
+ if(!channel)return;var cid=channel.id,box=el('toolPolls');box.textContent='';
+ Object.keys(toolPolls).forEach(function(id){var p=toolPolls[id];if(p.channel!==cid)return;var card=document.createElement('div');card.className='card';var title=document.createElement('p');title.textContent=p.question;card.appendChild(title);var count=document.createElement('p');count.className='sub';var yes=0,no=0;Object.keys(p.votes).forEach(function(k){p.votes[k]?yes++:no++;});count.textContent='Yes '+yes+' · No '+no+' · '+p.name;card.appendChild(count);['Yes','No'].forEach(function(label,i){agButton(label,function(){p.votes[peer.id]=i===0;broadcast({t:'tool-vote',id:id,yes:i===0});toolRender();},card);});box.appendChild(card);});
+ var check=el('toolRoster');check.textContent='';var me=load('checkin:'+cid,null);if(me){var m=document.createElement('p');m.className='sub';m.textContent=myName+' (you) · '+(me.out?'checked out':'checked in');check.appendChild(m);}
+ Object.keys(toolCheckins).forEach(function(id){var r=toolCheckins[id];if(r.channel!==cid)return;var line=document.createElement('p');line.className='sub';line.textContent=r.name+' · '+(r.out?'checked out':'checked in');check.appendChild(line);});
+ var hours=load('hours:'+cid,[]),total=hours.reduce(function(n,r){return n+Math.max(0,r.out-r.in);},0);el('toolHours').textContent=(total/3600000).toFixed(2)+' completed hours saved on this device'+(me&&!me.out?' · currently checked in':'');
+ el('toolNote').value=load('note:'+cid,'');
+}
+function toolCheck(out){if(!channel||!peer)return;var key='checkin:'+channel.id,rec=load(key,null),now=Date.now();if(!out){if(rec&&!rec.out){toast('Already checked in.');return;}rec={in:now,out:null};save(key,rec);}else{if(!rec||rec.out){toast('Check in first.');return;}rec.out=now;save(key,rec);var h=load('hours:'+channel.id,[]);h.unshift(rec);save('hours:'+channel.id,h.slice(0,100));}broadcast({t:'tool-check',name:myName,out:out});toolRender();}
+el('toolIn').onclick=function(){toolCheck(false);};el('toolOut').onclick=function(){toolCheck(true);};
+el('toolPollGo').onclick=function(){if(!channel||!peer)return;var q=el('toolQuestion').value.trim().slice(0,140);if(q.length<3){toast('Enter a short yes/no question.');return;}var count=Object.keys(toolPolls).length;if(count>=20){toast('Limit 20 live polls this session.');return;}var id=toolId();toolPolls[id]={channel:channel.id,question:q,name:myName,votes:{},owner:peer.id};broadcast({t:'tool-poll',id:id,question:q,name:myName});el('toolQuestion').value='';toolRender();};
+el('toolNoteSave').onclick=function(){if(!channel)return;save('note:'+channel.id,el('toolNote').value.slice(0,4000));toast('Note saved on this device only.');};
+el('toolNoteDelete').onclick=function(){if(!channel)return;save('note:'+channel.id,'');el('toolNote').value='';toast('Local note deleted.');};
+el('toolHoursDelete').onclick=function(){if(!channel)return;save('hours:'+channel.id,[]);save('checkin:'+channel.id,null);toolRender();toast('Local hours deleted.');};
+function toolIncoming(from,d){
+ if(!channel||!conns.has(from))return;var u=conns.get(from),now=Date.now();u._toolTimes=(u._toolTimes||[]).filter(function(t){return now-t<60000;});if(u._toolTimes.length>=30)return;u._toolTimes.push(now);
+ if(d.t==='tool-poll'&&typeof d.id==='string'&&/^[a-f0-9]{16}$/.test(d.id)&&typeof d.question==='string'&&d.question.length<=140&&Object.keys(toolPolls).length<20&&!toolPolls[d.id])toolPolls[d.id]={channel:channel.id,question:d.question,name:u.name,votes:{},owner:from};
+ if(d.t==='tool-vote'&&typeof d.yes==='boolean'&&toolPolls[d.id]&&toolPolls[d.id].channel===channel.id)toolPolls[d.id].votes[from]=d.yes;
+ if(d.t==='tool-check'&&typeof d.out==='boolean')toolCheckins[from]={channel:channel.id,name:u.name,out:d.out};
+ toolRender();
+}
+
 /* Device-local incoming replay. No audio uploads. */
 var replayDB=null,replayStreams=new Map(),replayRecorders=new Map(),replayAudio=null,replayPendingJoin=null;
 function replayEnabled(){return load('localReplay',true);}
@@ -1591,7 +1617,7 @@ function startJoin(chan, preclaimed){
 }
 function proceedJoin(chan, preclaimed){
   channel=chan;
-  replayRender();
+  replayRender();toolRender();
   agWatchSession(chan);
   if(chan.id.charAt(0)==='r') toast('Channel ID: OC-'+chan.id.slice(1,17));
   homeView.classList.add('hidden'); chanView.classList.remove('hidden');
@@ -1708,6 +1734,7 @@ function broadcast(obj){ conns.forEach(function(u){ try{ u.conn.send(obj); }catc
 function handleData(from,d,conn){
   if(!d||typeof d!=='object') return;
   var u=conns.get(from);
+  if(typeof d.t==='string'&&d.t.indexOf('tool-')===0){toolIncoming(from,d);return;}
   if(d.t==='hello'){
     if(u)u.replayAware=d.replayAware===true;
     if(u){ u.name=d.name||u.name; u.dsp=!!d.dsp; u.status=d.status||u.status; if(d.note!==undefined) u.note=d.note; if(d.uid) u.uid=d.uid; if(d.scan){ u.scan=true; refreshFloorUI(); } }
