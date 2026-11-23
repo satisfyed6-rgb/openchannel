@@ -699,34 +699,10 @@ function mdcBurst(level){
    Pixabay Content License). Fallback: synthesized Astro-style sequence built from
    scratch - MDC-style 1200/1800Hz data chirp, then triple 1800Hz permit beeps. */
 function keyChirp(){
-  if(!radioFxOn) return;
-  if(sndSel('press')==='none')return;
-  if(playSfx('press',{gain:1})) return;
-  var ctx=ac(); if(!ctx) return;
-  var t=ctx.currentTime;
-  /* MDC-style chirp: fast two-tone data warble, ~126ms */
-  var o=ctx.createOscillator(), g=ctx.createGain();
-  o.type='sine';
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.075, t+0.008);
-  var bit=0.009;
-  for(var i=0;i<14;i++){ o.frequency.setValueAtTime(i%2?1800:1200, t+i*bit); }
-  g.gain.setValueAtTime(0.075, t+14*bit);
-  g.gain.exponentialRampToValueAtTime(0.0001, t+14*bit+0.012);
-  o.connect(g); g.connect(ctx.destination);
-  o.start(t); o.stop(t+14*bit+0.02);
-  /* talk-permit triple beep: three 1800Hz pulses, ~40/40/60ms, slight volume falloff */
-  var t0=t+14*bit+0.045;
-  [[0,0.040,0.085],[0.055,0.040,0.073],[0.110,0.060,0.070]].forEach(function(p){
-    var o2=ctx.createOscillator(), g2=ctx.createGain();
-    o2.type='sine'; o2.frequency.value=1800;
-    g2.gain.setValueAtTime(0.0001, t0+p[0]);
-    g2.gain.exponentialRampToValueAtTime(p[2], t0+p[0]+0.006);
-    g2.gain.setValueAtTime(p[2], t0+p[0]+p[1]-0.006);
-    g2.gain.exponentialRampToValueAtTime(0.0001, t0+p[0]+p[1]);
-    o2.connect(g2); g2.connect(ctx.destination);
-    o2.start(t0+p[0]); o2.stop(t0+p[0]+p[1]+0.01);
-  });
+  if(!radioFxOn||sndSel('press')==='none')return;
+  if(playSfx('press',{gain:1}))return;
+  /* Never append the old synthetic data-burst + triple-beep fallback. */
+  try{var file=SFX_FILES.press;if(file){var a=new Audio(file);a.volume=1;a.play().catch(function(){});}}catch(e){}
 }
 /* courtesy tone after a unit unkeys, like the repeater beep */
 function rogerBeep(){
@@ -1409,6 +1385,7 @@ function markStatus(btn){
 /* ---------- custom beeps: owner-supplied clips, selectable per sound; Defaults: release Clip 1, incoming Clip 4 ---------- */
 var USER_CLIPS={clip1:'beeps/clip1.mp3',clip2:'beeps/clip2.mp3',clip3:'beeps/clip3.mp3',clip4:'beeps/clip4.mp3'};
 var SND_ORIG={press:'sfx-press.mp3',rel:'sfx-release.mp3',inc:'sfx-incoming.mp3'};
+if(!load('pressRestore45',false)){save('sndpress','orig');save('pressRestore45',true);}
 var SND_LABELS={none:'None',orig:'Original',clip1:'Clip 1',clip2:'Clip 2 (long)',clip3:'Clip 3 (long)',clip4:'Clip 4'};
 if(!load('beepMigration36',false)){ if(load('sndrel',null)==='orig') save('sndrel','clip1'); save('beepMigration36',true); }
 function sndSel(which){ var def=which==='press'?'orig':(which==='rel'?'clip1':'clip4'); var s=load('snd'+which,def); return (s==='orig'||s==='none'||USER_CLIPS[s])?s:def; }
@@ -1991,8 +1968,7 @@ function ensureMic(){
 function startTx(){
   if(micGate)micGate.gain.value=1;
   tx=true; floorHolder=peer?peer.id:null; floorName=myName;
-  /* press = the owner's chosen key-up clip, raw (it already contains the click + burst);
-     no extra squelch click on top. Fallback chain lives inside keyChirp. */
+  /* Button down: original press clip only. Incoming alert is receiver-only. */
   keyChirp();
   broadcast({t:'floor',on:true,name:myName,dsp:dispatcher});
   txFeedRow=feedVoice({name:myName+' (you)',live:true});
