@@ -47,9 +47,9 @@
 
   /* home channel list */
   .chan-item{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--panel);
-    border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:10px; cursor:pointer}
+    border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:10px; cursor:pointer}
   .chan-item:hover{border-color:var(--accent)}
-  .chan-item .ci{width:40px; height:40px; border-radius:50%; background:var(--panel2); border:1px solid var(--line);
+  .chan-item .ci{width:46px; height:46px; border-radius:50%; background:var(--panel2); border:1px solid var(--line);
     display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--lcd-fg); flex:0 0 auto}
   .chan-item .cn{font-weight:700}
   .chan-item .cd{font-size:12px; color:var(--dim)}
@@ -87,10 +87,13 @@
 
   /* bottom talk bar */
   .talkbar{position:sticky; bottom:0; margin-top:10px; padding:12px 0 8px; background:linear-gradient(transparent, var(--bg) 30%); text-align:center}
-  .ptt{width:132px; height:132px; border-radius:50%; border:4px solid #39434f;
+  .ptt{width:176px; height:176px; border-radius:50%; border:5px solid #39434f;
     background:radial-gradient(circle at 35% 30%, #2b3540, #161c23); cursor:pointer;
-    color:var(--text); font-weight:800; letter-spacing:1px; font-size:15px;
+    color:var(--text); font-weight:800; letter-spacing:2px; font-size:19px;
+    transition:transform .06s ease-out;
     touch-action:none; user-select:none; -webkit-user-select:none}
+  .ptt:active{transform:scale(.95)}
+  .ptt.tx{transform:scale(1.03)}
   .ptt.tx{border-color:var(--red); color:var(--red); box-shadow:0 0 24px rgba(255,90,90,.35)}
   .ptt:disabled{opacity:.45; cursor:not-allowed}
   .ptt-hint{color:var(--dim); font-size:12.5px; margin-top:8px; min-height:16px}
@@ -124,6 +127,9 @@
   dialog{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:14px; padding:18px; max-width:320px}
   dialog::backdrop{background:rgba(0,0,0,.6)}
   .hidden{display:none !important}
+  @keyframes viewin{from{opacity:0; transform:translateY(7px)} to{opacity:1; transform:none}}
+  #homeView,#chanView{animation:viewin .18s ease-out}
+  .chan-item:active{border-color:var(--lcd-fg); transform:scale(.99)}
 </style>
 </head>
 <body>
@@ -139,15 +145,14 @@
   <div id="homeView">
     <div class="card">
       <h1>Push-to-talk radio</h1>
-      <p class="sub">Tap a channel, hold the button, talk. Install it as an app for the full feel.</p>
-      <div class="row" style="margin-top:10px">
-        <input type="text" id="nickInput" maxlength="20" placeholder="Your radio name (e.g. Unit 12)" autocomplete="off" style="flex:1; min-width:160px">
-      </div>
-      <div class="sec-label">Your status</div>
+      <p class="sub">Hold the button, talk. Install as an app for the full feel.</p>
       <div class="status-row">
         <button class="st-btn sel" data-st="Available" type="button"><span class="sd av"></span>Available</button>
         <button class="st-btn" data-st="Busy" type="button"><span class="sd bs"></span>Busy</button>
         <button class="st-btn" data-st="Offline" type="button"><span class="sd of"></span>Offline</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <input type="text" id="nickInput" maxlength="20" placeholder="Your radio name (e.g. Unit 12)" autocomplete="off" style="flex:1; min-width:160px">
       </div>
       <div class="row" style="margin-top:10px">
         <button class="mini-btn" id="installBtn" type="button">Install as an app</button>
@@ -159,8 +164,8 @@
 
     <p class="foot">
       OpenChannel is a feedback prototype, not a finished product. <b>Not for life-safety or emergency use</b> — in a real emergency call 911.
-      Channels only; there are no direct messages. Voice goes peer-to-peer through the free PeerJS cloud relay; nothing is recorded or stored on a server.
-      Voice history is kept on your own device only. Free to run: static page + free signaling.
+      Channels only; there are no direct messages. Voice goes peer-to-peer through the free PeerJS cloud relay.
+      Live only: nothing is recorded, saved, or stored anywhere. Free to run: static page + free signaling.
     </p>
   </div>
 
@@ -216,7 +221,7 @@
 
     <p class="foot">
       Prototype. <b>Not for life-safety or emergency use</b> — call 911 in a real emergency.
-      Voice history below is stored on this device only.
+      Live only: nothing is recorded or stored. Missed a call? Ask for a 10-9 (repeat).
     </p>
   </div>
 </div>
@@ -250,7 +255,6 @@ var CHANNELS=[
 ];
 var CODES=[['10-4','Acknowledged'],['10-9','Repeat last'],['10-20','Your location?'],['10-22','Disregard'],['10-8','In service'],['10-7','Out of service']];
 var BAD=['fuck','shit','bitch','nigger','faggot','cunt','rape','kys'];
-var MAX_HIST=30, MAX_REC_MS=120000;
 
 /* ---------- state ---------- */
 var peer=null, mySlot=0, myName='', myStatus='Available', channel=null;
@@ -264,7 +268,6 @@ var bans=[], reports=[];
 var adminMutedUntil=0;
 var liveFeedRow=null;      /* feed row for the current incoming transmission */
 var txFeedRow=null;
-var rec=null, recStart=0, recFrom='', recOwn=false;
 var radioFxOn=load('radiofx',true);
 
 /* ---------- dom ---------- */
@@ -282,54 +285,6 @@ var homeView=el('homeView'), chanView=el('chanView'), nickInput=el('nickInput'),
 /* ---------- storage ---------- */
 function save(k,v){ try{ localStorage.setItem('oc27:'+k, JSON.stringify(v)); }catch(e){} }
 function load(k,d){ try{ var v=localStorage.getItem('oc27:'+k); return v?JSON.parse(v):d; }catch(e){ return d; } }
-
-/* ---------- history store (IndexedDB, memory fallback) ---------- */
-var db=null, memHist=[];
-function dbOpen(){
-  return new Promise(function(res){
-    try{
-      var rq=indexedDB.open('openchannel',1);
-      rq.onupgradeneeded=function(){ var d=rq.result; var s=d.createObjectStore('history',{keyPath:'id',autoIncrement:true}); s.createIndex('byChan','channel'); };
-      rq.onsuccess=function(){ db=rq.result; res(true); };
-      rq.onerror=function(){ res(false); };
-    }catch(e){ res(false); }
-  });
-}
-function histAdd(item){
-  return new Promise(function(res){
-    if(!db){ memHist.push(item); res(); return; }
-    try{
-      var txd=db.transaction('history','readwrite'), st=txd.objectStore('history');
-      st.add(item);
-      txd.oncomplete=function(){
-        /* trim to MAX_HIST per channel */
-        var idx=st.index('byChan'), keys=[];
-        idx.openKeyCursor(IDBKeyRange.only(item.channel)).onsuccess=function(ev){
-          var c=ev.target.result;
-          if(c){ keys.push(c.primaryKey); c.continue(); }
-          else{
-            var extra=keys.length-MAX_HIST;
-            if(extra>0){ keys.slice(0,extra).forEach(function(k){ st.delete(k); }); }
-            res();
-          }
-        };
-      };
-      txd.onerror=function(){ res(); };
-    }catch(e){ res(); }
-  });
-}
-function histGet(chanId){
-  return new Promise(function(res){
-    if(!db){ res(memHist.filter(function(h){return h.channel===chanId;})); return; }
-    try{
-      var out=[], idx=db.transaction('history').objectStore('history').index('byChan');
-      idx.openCursor(IDBKeyRange.only(chanId)).onsuccess=function(ev){
-        var c=ev.target.result;
-        if(c){ out.push(c.value); c.continue(); } else res(out);
-      };
-    }catch(e){ res([]); }
-  });
-}
 
 /* ---------- crypto ---------- */
 function sha256hex(s){
@@ -405,6 +360,7 @@ function toast(s){ toastBox.textContent=s; toastBox.style.display='block'; clear
 function fmtTime(ts){ return new Date(ts||Date.now()).toTimeString().slice(0,5); }
 function fmtDur(ms){ var s=Math.max(1,Math.round(ms/1000)); return '0:'+('0'+s).slice(-2); }
 function scrollFeed(){ feed.scrollTop=feed.scrollHeight; }
+function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 function feedSys(html){
   var d=document.createElement('div'); d.className='fsys'; d.innerHTML=html;
   feed.appendChild(d); scrollFeed();
@@ -416,23 +372,10 @@ function waveBars(){
   return w;
 }
 function feedVoice(item){
-  /* item: {name, own, ts, durMs, blob|null, live} */
-  var d=document.createElement('div'); d.className='fmsg'+(item.live?' live':'');
-  if(item.live){
-    d.innerHTML='<span class="eq">LIVE</span><div style="flex:1"><div class="who"></div><div class="meta">on air now</div></div><div class="wave">'+waveBars()+'</div>';
-    d.querySelector('.who').textContent=item.name;
-  } else {
-    d.innerHTML='<button class="play" type="button" '+(item.blob?'':'disabled')+'>▶</button><div style="flex:1"><div class="who"></div><div class="meta">'+fmtTime(item.ts)+' · '+fmtDur(item.durMs)+(item.blob?'':' · not recorded')+'</div></div><div class="wave">'+waveBars()+'</div>';
-    d.querySelector('.who').textContent=item.name+(item.own?' (you)':'');
-    if(item.blob){
-      var btn=d.querySelector('.play');
-      btn.onclick=function(){
-        var a=new Audio(URL.createObjectURL(item.blob));
-        a.onended=function(){ URL.revokeObjectURL(a.src); };
-        a.play().catch(function(){ toast('Replay not supported on this browser'); });
-      };
-    }
-  }
+  /* live-only: no recording, no replay */
+  var d=document.createElement('div'); d.className='fmsg live';
+  d.innerHTML='<span class="eq">LIVE</span><div style="flex:1"><div class="who"></div><div class="meta">on air now</div></div><div class="wave">'+waveBars()+'</div>';
+  d.querySelector('.who').textContent=item.name;
   feed.appendChild(d); scrollFeed();
   return d;
 }
@@ -477,27 +420,21 @@ function startJoin(chan){
   chanTitle.firstChild.textContent=chan.num+' · '+chan.name;
   oemBanner.classList.toggle('hidden', !chan.training);
   feed.innerHTML='';
-  setStatus('finding an open slot…');
-  loadFeed(chan.id);
+  setStatus('connecting to '+chan.name+'…');
   join(1);
 }
-function loadFeed(chanId){
-  histGet(chanId).then(function(items){
-    items.slice(-MAX_HIST).forEach(function(it){ it.blob=blobFromStored(it); feedVoice(it); });
-  });
-}
-function blobFromStored(it){ return it.blob||null; }
-
 function join(slot){
   if(typeof Peer==='undefined'){ enterOffline(); return; }
   if(slot>SLOTS){ setStatus('channel full — try another'); return; }
   var p, settled=false;
+  setStatus('reserving slot '+slot+' of '+SLOTS+'…');
   try{ p=new Peer(slotId(slot)); }catch(e){ enterOffline(); return; }
   var to=setTimeout(function(){ if(!settled){ settled=true; try{p.destroy();}catch(e){} join(slot+1); } },4500);
   p.on('open', function(){
     if(settled) return; settled=true; clearTimeout(to);
     peer=p; mySlot=slot; wirePeer();
     bans=load('bans:'+channel.id,[]);
+    buzz(25);
     feedSys('You joined <b>'+esc(channel.name)+'</b> as <b>'+esc(myName)+'</b>'+(offline?' (offline demo)':''));
     refreshFloorUI(); renderUsers();
     if(isOwner){ announceOwner(); renderAdmin(); }
@@ -516,8 +453,8 @@ function wirePeer(){
   peer.on('connection', function(conn){ setupConn(conn); });
   peer.on('call', function(call){
     try{ call.answer(); }catch(e){}
-    call.on('stream', function(rs){ playStream(call.peer, rs); startRec(rs, call.peer); });
-    call.on('close', function(){ stopStream(call.peer); stopRec(); });
+    call.on('stream', function(rs){ playStream(call.peer, rs); });
+    call.on('close', function(){ stopStream(call.peer); });
     call.on('error', function(){});
   });
   peer.on('disconnected', function(){ try{ peer.reconnect(); }catch(e){} });
@@ -581,11 +518,12 @@ function handleData(from,d){
       if(tx&&d.dsp&&!dispatcher){ releasePTT(true); feedSys('Dispatcher took the net'); }
       floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;
       if(u){u.talking=true;}
+      buzz(18);
       squelch(true); startStatic(); startLiveRow(floorName); refreshFloorUI(); renderUsers();
     } else {
       if(u){u.talking=false;}
       if(floorHolder===from){ floorHolder=null; floorName=''; floorIsDsp=false; }
-      stopStatic(); squelch(false); rogerBeep(); stopRec(); endLiveRow(); refreshFloorUI(); renderUsers();
+      stopStatic(); squelch(false); rogerBeep(); endLiveRow(); refreshFloorUI(); renderUsers();
     }
   }
   else if(d.t==='owner'){
@@ -603,40 +541,6 @@ function handleData(from,d){
   else if(d.t==='chat-sys'){
     beep(1200,60); feedSys(esc(d.text||''));
   }
-}
-
-/* ---------- recording (device-local voice history) ---------- */
-function pickMime(){
-  if(!window.MediaRecorder) return '';
-  var c=['audio/webm;codecs=opus','audio/webm','audio/mp4'];
-  for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
-  return '';
-}
-function startRec(stream, fromPeer){
-  stopRec(true);
-  var mime=pickMime();
-  var fromName=fromPeer?(conns.get(fromPeer)?conns.get(fromPeer).name:'Unit'):myName;
-  if(!mime){ recOwn=false; rec=null; recFrom=fromName; recStart=Date.now(); return; } /* untracked, will save as not-recorded */
-  try{
-    var chunks=[];
-    rec=new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
-    rec.ondataavailable=function(e){ if(e.data&&e.data.size) chunks.push(e.data); };
-    rec.onstop=function(){
-      var dur=Date.now()-recStart;
-      if(dur<400) return;
-      var blob=chunks.length?new Blob(chunks,{type:mime||'audio/webm'}):null;
-      var item={channel:channel.id, name:recFrom, own:recOwn, ts:Date.now(), durMs:dur, blob:blob};
-      histAdd(item);
-      feedVoice(item);
-    };
-    recFrom=fromName; recOwn=!fromPeer; recStart=Date.now();
-    rec.start(500);
-    setTimeout(function(){ if(rec&&rec.state==='recording') stopRec(); }, MAX_REC_MS);
-  }catch(e){ rec=null; recFrom=fromName; recStart=Date.now(); }
-}
-function stopRec(silent){
-  if(rec&&rec.state!=='inactive'){ try{ rec.stop(); }catch(e){} }
-  rec=null;
 }
 
 /* ---------- floor / TX ---------- */
@@ -663,7 +567,7 @@ function pressPTT(){
   if(locked&&!isOwner){ toast('Channel locked by owner.'); return; }
   if(floorHolder&&!dispatcher){ toast('Net busy — '+floorName+' is talking'); return; }
   if(floorHolder&&dispatcher&&floorIsDsp){ toast('Another dispatcher has the net'); return; }
-  ac();
+  ac(); buzz(30);
   if(!micStream&&!micFailed){
     navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
       micStream=s; startTx();
@@ -680,7 +584,6 @@ function startTx(){
   squelch(true); keyChirp();
   broadcast({t:'floor',on:true,name:myName,dsp:dispatcher});
   txFeedRow=feedVoice({name:myName+' (you)',live:true});
-  startRec(micStream, null);
   myCalls=[];
   conns.forEach(function(u,id){ try{ myCalls.push(peer.call(id,micStream)); }catch(e){} });
   refreshFloorUI();
@@ -688,10 +591,10 @@ function startTx(){
 function releasePTT(yielded){
   if(!tx) return;
   tx=false; floorHolder=null; floorName='';
+  buzz(12);
   squelch(false);
   broadcast({t:'floor',on:false,name:myName});
   if(txFeedRow){ txFeedRow.remove(); txFeedRow=null; }
-  stopRec();
   myCalls.forEach(function(c){ try{c.close();}catch(e){} });
   myCalls=[];
   refreshFloorUI();
@@ -736,6 +639,7 @@ function stopStream(pid){
 
 /* ---------- codes ---------- */
 function sendCode(code,label){
+  buzz(10);
   broadcast({t:'code',code:code,label:label,name:myName});
   beep(1500,70);
   feedSys('<b>'+esc(myName)+'</b>: '+esc(code)+' — '+esc(label));
@@ -935,7 +839,6 @@ function enterOffline(){
 }
 function leaveChannel(){
   releasePTT();
-  stopRec(true);
   myCalls.forEach(function(c){try{c.close();}catch(e){}}); myCalls=[];
   conns.forEach(function(u){ try{u.conn.close();}catch(e){} stopStream(u.conn.peer); });
   conns.clear();
@@ -976,7 +879,6 @@ installBtn.onclick=function(){
   }
 };
 window.addEventListener('beforeunload',function(){ releasePTT(); });
-dbOpen();
 })();
 </script>
 </body>
