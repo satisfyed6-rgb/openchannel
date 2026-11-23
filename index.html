@@ -461,7 +461,7 @@
   <p class="sub" id="ownerMsg"></p>
 </dialog>
 
-<dialog id="replayNotice"><h1 style="font-size:18px">Before you join</h1><p class="sub">1. Choose a channel or create your own.<br>2. Hold TALK to speak, let go to listen.<br>3. Allow the mic to talk, or choose Listen only.</p><h2 style="font-size:15px">Listeners can save voice</h2><p class="sub">Incoming transmissions are saved locally for replay, up to 20 per channel on each listener's device. Nothing is uploaded as a recording. Busy mode mutes live voice and keeps a listen-later queue while connected. You can turn saving off and delete your copies, but cannot delete copies on other devices. Do not share sensitive information.</p><p class="sub">Recordings are limited to 60 seconds each. Browser storage may be cleared or fail. Legacy clients are not recorded by this version.</p><button class="big-act" id="replayAgree">Got it, join channel</button><button class="mini-btn" id="replayCancel">Cancel</button></dialog><dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Listeners may save incoming voice locally for replay. No recordings are uploaded. Your microphone stays muted between transmissions. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
+<dialog id="replayNotice"><h1 style="font-size:18px">Before you join</h1><p class="sub">1. Choose a channel or create your own.<br>2. Hold TALK to speak, let go to listen.<br>3. Allow the mic to talk, or choose Listen only.</p><h2 style="font-size:15px">Listeners can save voice</h2><p class="sub">Incoming transmissions are saved locally for replay, up to 20 per channel on each listener's device. Nothing is uploaded as a recording. Busy mode mutes live voice and keeps a listen-later queue while connected. You can turn saving off and delete your copies, but cannot delete copies on other devices. Do not share sensitive information.</p><p class="sub">Recordings are limited to 60 seconds each. Browser storage may be cleared or fail. Legacy clients are not recorded by this version.</p><button class="big-act" id="replayAgree">Got it, join channel</button><button class="mini-btn" id="replayCancel">Cancel</button></dialog><dialog id="micDlg"><h1 style="font-size:18px">Enable your microphone</h1><p class="sub">So your crew can hear you while you hold TALK. Listeners may save incoming voice locally for replay. No recordings are uploaded. Your microphone stays muted between transmissions and is released when this app goes into the background. Reopen a channel when you return. Your browser will ask next.</p><button class="big-act" id="micAllow">Enable microphone</button><button class="mini-btn" id="micLater">Listen only</button><p class="sub" id="micHelp"></p></dialog><div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -492,7 +492,7 @@ var conns=new Map();
 var scans={}, SCAN_MAX=3; /* multi-channel scan state, populated by the scan module below */
 var myCalls=[];
 var micStream=null, micRaw=null, micGate=null, micFailed=false;
-var tx=false, floorHolder=null, floorName='', floorIsDsp=false;
+var tx=false, floorHolder=null, floorName='', floorIsDsp=false,floorSince=0;
 var dispatcher=false, locked=false, ownerOnline=false, ownerPeer=null;
 var isOwner=false, chanOwner=false, offline=false;
 
@@ -609,8 +609,9 @@ function sha256hex(s){
 }
 
 /* ---------- sound: LMR/police-style radio FX, all synthesized in-browser (no recordings, no license risk) ---------- */
-var AC=null;
-function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+var AC=null,appBackground=false,micEpoch=0,sfxMedia=[],SFX_LEVEL=.70,sfxBus=null;
+function sfxOut(ctx){if(!sfxBus||sfxBus.context!==ctx){sfxBus=ctx.createGain();sfxBus.gain.value=SFX_LEVEL;sfxBus.connect(ctx.destination);}return sfxBus;}
+function ac(){ if(appBackground||document.hidden)return null; if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(!appBackground&&!document.hidden&&AC&&AC.state==='suspended') AC.resume(); return AC; }
 /* recorded radio SFX (Pixabay Content License, see README) with synth fallback */
 var SFX_FILES={press:'sfx-press.mp3',beep:'sfx-beep.mp3',click:'sfx-click.mp3',tail:'sfx-tail.mp3',static:'sfx-static.mp3',release:'sfx-release.mp3',incoming:'sfx-incoming.mp3'};
 var sfxBuffers={};
@@ -626,6 +627,7 @@ function sfxLoad(){
   });
 }
 function playSfx(k,opts){
+  if(appBackground||document.hidden)return null;
   var buf=sfxBuffers[k];
   if(!buf||buf==='loading') return null;
   var ctx=ac(); if(!ctx) return null;
@@ -633,7 +635,7 @@ function playSfx(k,opts){
     var src=ctx.createBufferSource(); src.buffer=buf; src.loop=!!(opts&&opts.loop);
     if(opts&&opts.rate) src.playbackRate.value=opts.rate;
     var g=ctx.createGain(); g.gain.value=(opts&&opts.gain!=null)?opts.gain:1;
-    src.connect(g); g.connect(ctx.destination);
+    src.connect(g); g.connect(sfxOut(ctx));
     src.start(ctx.currentTime+((opts&&opts.delay)||0));
     if((k==='press'||k==='release')&&buf.duration>1)src.stop(ctx.currentTime+.85);
     if(k==='incoming'&&buf.duration>2)src.stop(ctx.currentTime+1.5);
@@ -650,12 +652,12 @@ function clickFx(ctx){
   o.type='square'; o.frequency.value=2200;
   g.gain.setValueAtTime(0.06, ctx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.0005, ctx.currentTime+0.02);
-  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.025);
+  o.connect(g); g.connect(sfxOut(ctx)); o.start(); o.stop(ctx.currentTime+0.025);
 }
 /* squelch: open = short hiss as the carrier arrives; close = the classic noise-crash tail + release click */
 function squelch(open){
   if(busyAudio())return;
-  if(!radioFxOn) return;
+  if(appBackground||document.hidden||!radioFxOn) return;
   if(!open&&typeof sndSel==='function'&&sndSel('rel')!=='orig') return;
   if(open){ if(playSfx('click',{gain:0.9})) return; }
   else { if(playSfx('tail',{gain:0.85})) return; }
@@ -677,13 +679,13 @@ function squelch(open){
     src.connect(lp); lp.connect(g);
     setTimeout(function(){ var c2=ac(); if(c2) clickFx(c2); }, 200);
   }
-  g.connect(ctx.destination); src.start();
+  g.connect(sfxOut(ctx)); src.start();
 }
 function beep(freq,dur,type,gain){
   var ctx=ac(); if(!ctx) return;
   var o=ctx.createOscillator(), g=ctx.createGain();
   o.type=type||'square'; o.frequency.value=freq||1400; g.gain.value=gain||0.08;
-  o.connect(g); g.connect(ctx.destination); o.start();
+  o.connect(g); g.connect(sfxOut(ctx)); o.start();
   setTimeout(function(){ o.stop(); }, dur||90);
 }
 /* MDC-1200-style ANI data burst: the "bzzt" squawk when a unit keys up */
@@ -693,21 +695,21 @@ function mdcBurst(level){
   o.type='sine'; g.gain.value=level||0.07;
   var t=ctx.currentTime, bit=0.009;
   for(var i=0;i<14;i++){ o.frequency.setValueAtTime(i%2?1800:1200, t+i*bit); }
-  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(t+14*bit+0.01);
+  o.connect(g); g.connect(sfxOut(ctx)); o.start(); o.stop(t+14*bit+0.01);
 }
 /* key-up / talk-permit: real radio key-up clip chosen by the owner (sfx-press.mp3,
    Pixabay Content License). Fallback: synthesized Astro-style sequence built from
    scratch - MDC-style 1200/1800Hz data chirp, then triple 1800Hz permit beeps. */
 function keyChirp(){
-  if(!radioFxOn||sndSel('press')==='none')return;
+  if(appBackground||document.hidden||!radioFxOn||sndSel('press')==='none')return;
   if(playSfx('press',{gain:1}))return;
   /* Never append the old synthetic data-burst + triple-beep fallback. */
-  try{var file=SFX_FILES.press;if(file){var a=new Audio(file);a.volume=1;a.play().catch(function(){});}}catch(e){}
+  try{var file=SFX_FILES.press;if(file){var a=new Audio(file);a.volume=SFX_LEVEL;sfxMedia.push(a);a.play().catch(function(){});}}catch(e){}
 }
 /* courtesy tone after a unit unkeys, like the repeater beep */
 function rogerBeep(){
   if(busyAudio())return;
-  if(!radioFxOn) return;
+  if(appBackground||document.hidden||!radioFxOn) return;
   setTimeout(function(){
     if(playSfx('release',{gain:0.9})) return;
     if(!playSfx('beep',{rate:1,gain:0.5})) beep(1000,110,'sine',0.06);
@@ -718,7 +720,7 @@ function rogerBeep(){
    change the sound). Fallback: synthesized double 2300Hz beep. */
 function incomingChirp(){
   if(busyAudio())return;
-  if(!radioFxOn) return;
+  if(appBackground||document.hidden||!radioFxOn) return;
   setTimeout(function(){
     if(playSfx('incoming',{gain:0.95})) return;
     beep(2300,87,'sine',0.08);
@@ -734,7 +736,7 @@ function makeDistortionCurve(k){
 var staticSrc=null, staticGain=null, popTimer=null;
 function startStatic(){
   if(busyAudio())return;
-  if(!radioFxOn) return;
+  if(appBackground||document.hidden||!radioFxOn) return;
   var h=playSfx('static',{loop:true,gain:0.5});
   if(h){ stopStatic(); staticSrc=h.src; staticGain=h.g; return; }
   var ctx=ac(); if(!ctx) return;
@@ -743,7 +745,7 @@ function startStatic(){
   var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
   var hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=250;
   var g=ctx.createGain(); g.gain.value=0;
-  src.connect(lp); lp.connect(hp); hp.connect(g); g.connect(ctx.destination);
+  src.connect(lp); lp.connect(hp); hp.connect(g); g.connect(sfxOut(ctx));
   src.start();
   g.gain.setTargetAtTime(0.04, ctx.currentTime, 0.08);
   staticSrc=src; staticGain=g;
@@ -754,7 +756,7 @@ function startStatic(){
     var s2=c2.createBufferSource(); s2.buffer=noiseBuf(c2,0.015);
     var bp2=c2.createBiquadFilter(); bp2.type='bandpass'; bp2.frequency.value=800+Math.random()*2400; bp2.Q.value=1.2;
     var g2=c2.createGain(); g2.gain.value=0.05+0.1*Math.random();
-    s2.connect(bp2); bp2.connect(g2); g2.connect(c2.destination); s2.start();
+    s2.connect(bp2); bp2.connect(g2); g2.connect(sfxOut(c2)); s2.start();
   }, 240);
 }
 function stopStatic(){
@@ -1395,10 +1397,11 @@ function sndApply(which){
   if(SFX_FILES[key]!==file){ SFX_FILES[key]=file; sfxBuffers[key]=toneOptionBuffers&&toneOptionBuffers[sel]&&toneOptionBuffers[sel]!=='loading'?toneOptionBuffers[sel]:null; sfxLoad(); }
 }
 function sndPreview(which){
+  if(appBackground||document.hidden)return;
   var sel=sndSel(which);
   if(sel==='none')return;
   if(sel==='orig'){ playSfx(which==='press'?'press':(which==='rel'?'release':'incoming')); return; }
-  try{ var a=new Audio(USER_CLIPS[sel]); a.play().catch(function(){}); if(sel==='clip2'||sel==='clip3')setTimeout(function(){a.pause();},which==='inc'?1500:800); }catch(e){}
+  try{ var a=new Audio(USER_CLIPS[sel]);a.volume=SFX_LEVEL;sfxMedia.push(a); a.play().catch(function(){}); if(sel==='clip2'||sel==='clip3')setTimeout(function(){a.pause();},which==='inc'?1500:800); }catch(e){}
 }
 function sndRow(rowEl, which, opts){
   if(!rowEl) return;
@@ -1615,21 +1618,26 @@ function busyAudio(){return myStatus==='Busy'||!!(channel&&load('joinMuted:'+cha
 function slotId(i){ return APP+'-'+channel.id+'-s'+i; }
 
 function startJoin(chan, preclaimed){
+  if(document.hidden||appBackground){toast('Bring the app to the front to join.');return;}
   if(!load('replayNotice39',false)){replayPendingJoin=function(){startJoin(chan,preclaimed);};openDlg(el('replayNotice'));return;}
   myName=(nickInput.value.trim().slice(0,20))||('Unit '+Math.floor(Math.random()*90+10));
   nickInput.value=myName; save('nick',myName);
+  var joinEpoch=micEpoch;
   ac(); sfxLoad(); friendlyMic();
   toast('Checking your account\u2026');
   fbClaimName(function(ok,msg){
+    if(appBackground||document.hidden||joinEpoch!==micEpoch)return;
     if(!ok){ toast(msg||'That radio name is registered to another account.'); return; }
     if(preclaimed){ proceedJoin(chan,preclaimed); return; }
     fbJoinCheck(chan,function(ok2,msg2){
+      if(appBackground||document.hidden||joinEpoch!==micEpoch)return;
       if(!ok2){ toast(msg2||'You cannot join that channel.'); return; }
       proceedJoin(chan,preclaimed);
     });
   });
 }
 function proceedJoin(chan, preclaimed){
+  if(appBackground||document.hidden){if(preclaimed)try{preclaimed.destroy();}catch(e){}return;}
   channel=chan;
   ['channelTools','teamTools','replayPanel'].forEach(function(id){el(id).classList.add('hidden');});el('channelMoreBtn').textContent='More options';
   if(chan.options&&chan.options.expires){setTimeout(function(){if(channel&&channel.id===chan.id){leaveChannel();toast('Local channel expiry reached. Not a remote deletion.');}},Math.min(2147483647,Math.max(0,chan.options.expires-Date.now())));}
@@ -1728,6 +1736,7 @@ function setupConn(conn){
   var t0=setTimeout(function(){ if(!opened){ try{conn.close();}catch(e){} } },9000);
   conn.on('open', function(){
     opened=true; clearTimeout(t0);
+    if(appBackground||document.hidden){try{conn.close();}catch(e){}return;}
     if(conn.metadata&&conn.metadata.probe){
       /* directory/dashboard probe: answer with channel meta and hang up - never joins the roster */
       if(channel&&channel.user){ try{ conn.send(chanAnnounce()); }catch(e){} }
@@ -1747,7 +1756,7 @@ function setupConn(conn){
     var u=conns.get(conn.peer);
     if(u&&!u.scan){ feedSys('<b>'+esc(u.name)+'</b> left the net'); }
     replayStop(conn.peer);replayStreams.delete(conn.peer);stopStream(conn.peer); conns.delete(conn.peer);
-    if(floorHolder===conn.peer){ floorHolder=null; floorName=''; endLiveRow(); }
+    if(floorHolder===conn.peer){ floorHolder=null; floorName='';floorIsDsp=false;stopStatic();endIncomingAlert();endLiveRow(); }
     refreshFloorUI(); renderUsers();
   });
   conn.on('error', function(){});
@@ -1758,6 +1767,7 @@ function visCount(){ var n=1; conns.forEach(function(u){ if(!u.scan) n++; }); re
 function broadcast(obj){ conns.forEach(function(u){ try{ u.conn.send(obj); }catch(e){} }); }
 
 function handleData(from,d,conn){
+  if(appBackground||document.hidden)return;
   if(!d||typeof d!=='object') return;
   var u=conns.get(from);
   if(typeof d.t==='string'&&d.t.indexOf('tool-')===0){toolIncoming(from,d);return;}
@@ -1821,16 +1831,27 @@ function handleData(from,d,conn){
     beep(1200,50); buzz(12);
     feedChat(who, d.text||'');
   }
+  else if(d.t==='floor-denied'){if(tx){releasePTT(true);toast('Channel busy. Wait for the other speaker.');}}
   else if(d.t==='floor'){
     if(d.on){
-      if(tx&&d.dsp&&!dispatcher){ releasePTT(true); feedSys('Dispatcher took the net'); }
-      floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;replayStart(from);
+      /* Ordinary clients converge on lowest peer ID for simultaneous claims. */
+      var current=floorHolder, selfId=peer&&peer.id;
+      if(current&&current!==from){
+        var wins=(Date.now()-floorSince<300)&&from<current;
+        if(!wins){try{conn.send({t:'floor-denied'});}catch(e){}return;}
+        if(tx){releasePTT(true);toast('Channel busy. Let the other person finish.');}
+        var prior=conns.get(current);if(prior){prior.talking=false;if(prior.audioGain)prior.audioGain.gain.value=0;if(prior.audioEl)prior.audioEl.muted=true;replayStop(current);}
+      }
+      if(tx&&d.dsp&&!dispatcher){releasePTT(true);}
+
+      floorHolder=from;floorSince=Date.now(); floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;replayStart(from);
       if(u){u.talking=true;if(u.audioGain)u.audioGain.gain.value=(u.muted||busyAudio())?0:1;if(u.audioEl)u.audioEl.muted=!!u.muted||busyAudio();}
       buzz(18);
       try{ if(navigator.vibrate) navigator.vibrate([140,70,140]); }catch(e){}
       incomingAlert(floorName);
       squelch(true); incomingChirp(); startStatic(); startLiveRow(floorName); refreshFloorUI(); renderUsers();
     } else {
+      if(floorHolder&&floorHolder!==from)return;
       replayStop(from);
       if(u){u.talking=false;if(u.audioGain)u.audioGain.gain.value=0;if(u.audioEl)u.audioEl.muted=true;}
       if(floorHolder===from){ floorHolder=null; floorName=''; floorIsDsp=false; }
@@ -1936,13 +1957,13 @@ function detachMeter(row){
 }
 
 function pressPTT(){
+  if(appBackground||document.hidden)return;
   if(channel&&channel.options&&channel.options.talk==='owner'&&channel._fbOwner!==fbUid&&!myOwnerRec(channel.id)){toast('Creator-only talk in this app. Client-side gate, not secure authorization.');return;}
   if(tx) return;
   if(networkDown||!peer||peer.disconnected){toast('Connection lost. Wait for reconnect or reopen this channel.');return;}
   if(Date.now()<adminMutedUntil){ toast('You are muted by the owner.'); return; }
   if(locked&&!hasMod()){ toast('Channel locked by owner.'); return; }
-  if(floorHolder&&!dispatcher){ toast('Net busy — '+floorName+' is talking'); return; }
-  if(floorHolder&&dispatcher&&floorIsDsp){ toast('Another dispatcher has the net'); return; }
+  if(floorHolder){ toast('Net busy — '+floorName+' is talking'); return; }
   ac(); buzz(30);
   if(micStream){ startTx(); return; }
   if(micFailed){openDlg(el('micDlg'));el('micHelp').textContent='Microphone blocked or unavailable. Allow it in your browser or device settings, then try again. You can still listen.';return;}
@@ -1955,22 +1976,25 @@ function friendlyMic(){ac();sfxLoad();preloadToneOptions();if(!load('micExplaine
 el('micAllow').onclick=function(){save('micExplained',true);micFailed=false;ac();sfxLoad();ensureMic();closeDlg(el('micDlg'));};
 el('micLater').onclick=function(){closeDlg(el('micDlg'));toast('Listen-only. Tap TALK to enable the microphone later.');};
 function ensureMic(){
-  if(!load('micExplained',false))return;
+  if(appBackground||document.hidden||!load('micExplained',false))return;
   if(micStream||micFailed||ensureMic.pending) return;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ micFailed=true; return; }
-  ensureMic.pending=true;
+  ensureMic.pending=true;var requestEpoch=micEpoch;
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+    if(requestEpoch!==micEpoch||appBackground||document.hidden){s.getTracks().forEach(function(t){t.stop();});ensureMic.pending=false;return;}
     ensureMic.pending=false; micRaw=s;var ctx=ac(),src=ctx.createMediaStreamSource(s),gate=ctx.createGain(),dest=ctx.createMediaStreamDestination();gate.gain.value=0;gate.connect(dest);micGate=gate;micStream=dest.stream;applyVoice();warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();broadcast({t:'mic-ready'});setTimeout(warmAllPeers,100);
   }).catch(function(){
     ensureMic.pending=false; micFailed=true;toast('Microphone blocked or unavailable. Tap TALK for help.');
   });
 }
 function startTx(){
-  if(micGate)micGate.gain.value=1;
-  tx=true; floorHolder=peer?peer.id:null; floorName=myName;
+  if(appBackground||document.hidden||floorHolder)return;
+  if(micGate)micGate.gain.value=0;
+  tx=true;floorSince=Date.now(); floorHolder=peer?peer.id:null; floorName=myName;floorIsDsp=dispatcher;
   /* Button down: original press clip only. Incoming alert is receiver-only. */
   keyChirp();
   broadcast({t:'floor',on:true,name:myName,dsp:dispatcher});
+  setTimeout(function(){if(tx&&floorHolder===(peer&&peer.id)&&micGate&&!appBackground)micGate.gain.value=1;},150);
   txFeedRow=feedVoice({name:myName+' (you)',live:true});
   attachMeter(txFeedRow, micStream);
   warmAllPeers();
@@ -2252,6 +2276,7 @@ function enterOffline(){
   feedSys('Signaling unreachable — showing offline demo');
 }
 function leaveChannel(){
+  micEpoch++;ensureMic.pending=false;
   stopNetworkTimers();networkDown=false;networkRow=null;pendingConns={};
   replayStopAll();
   if(agSessionUnsub){agSessionUnsub();agSessionUnsub=null;}
@@ -2306,9 +2331,21 @@ installBtn.onclick=function(){
     el('installHelp').textContent=ios?'On iPhone in Safari: tap Share, scroll down, tap Add to Home Screen, then Add.':'Open the browser menu, then Install app or Add to Home screen. If no install option appears, use Chrome or Safari.'; toast(el('installHelp').textContent);
   }
 };
-window.addEventListener('beforeunload',function(){ releasePTT(); });
+function releaseAppAudio(){
+  if(appBackground)return;appBackground=true;micEpoch++;ensureMic.pending=false;
+  if(peer||micRaw||micStream)leaveChannel();
+  Object.keys(scans).forEach(stopScan);stopStatic();endIncomingAlert();
+  sfxMedia.forEach(function(a){try{a.pause();a.src='';}catch(e){}});sfxMedia=[];
+  document.querySelectorAll('audio').forEach(function(a){try{a.pause();a.srcObject=null;a.remove();}catch(e){}});
+  if(replayAudio){replayAudio.pause();replayAudio=null;}
+  var old=AC;AC=null;sfxBus=null;sfxBuffers={};toneOptionBuffers={};if(old&&old.state!=='closed')old.close().catch(function(){});
+}
+document.addEventListener('visibilitychange',function(){if(document.hidden)releaseAppAudio();else{appBackground=false;toast('Audio released while away. Open a channel to reconnect.');}});
+window.addEventListener('pagehide',releaseAppAudio);
+window.addEventListener('pageshow',function(){appBackground=document.hidden;});
+window.addEventListener('beforeunload',releaseAppAudio);
 sfxLoad();
 })();
 </script>
 </body>
-</html>
+  </html>
