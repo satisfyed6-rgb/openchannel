@@ -25,6 +25,12 @@ The license does not allow selling or distributing the raw files standalone.
   starts talking. Placeholder pending the owner's own clip.
   https://pixabay.com/sound-effects/film-special-effects-walkie-talkie-83500/
 
+- beeps/clip1.mp3, clip2.mp3, clip3.mp3, clip4.mp3: the owner's own recordings,
+  supplied by him on 2026-11-23 with permission to use them in the app
+  ("free to use"). Selectable in Settings as release and incoming beeps
+  (clip4 is his incoming pick). clip2 and clip3 were converted from ogg/opus
+  to mp3 so they also play in iOS Safari; content otherwise unchanged.
+
 If a recording fails to load, the app falls back to tones synthesized in-browser with
 WebAudio (the talk-permit fallback is an MDC-style data chirp + triple permit beep,
 built from scratch). Voice filtering is synthesized. No Motorola or other copyrighted
