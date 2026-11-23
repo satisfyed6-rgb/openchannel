@@ -340,7 +340,7 @@
       <small>This channel is for practice drills only. In a real emergency call 911.</small>
     </div>
 
-    <div class="lcd"><span class="led" id="led"></span><span id="lcdStatus">connecting…</span></div>
+    <p class="sub" id="channelRules" style="padding:0 14px"></p><div class="lcd"><span class="led" id="led"></span><span id="lcdStatus">connecting…</span></div>
 
     <div class="card users" id="usersPanel">
       <div class="sec-label" style="margin-top:0">On this channel (<span id="usersCount">1</span>)</div>
@@ -358,7 +358,7 @@
       <button class="ptt" id="ptt" type="button">TALK</button>
       <div class="ptt-hint" id="pttHint">Hold to talk (or hold spacebar).</div>
       <div class="talk-tools">
-        <button class="mini-btn" id="textBtn" type="button">Text</button>
+        <button class="mini-btn" id="joinMuteBtn" type="button">Incoming: on</button><button class="mini-btn" id="textBtn" type="button">Text</button>
         <button class="mini-btn" id="codesBtn" type="button">10-codes</button>
         <button class="mini-btn" id="tapBtn" type="button">Lock: off</button>
         <button class="mini-btn" id="dspBtn" type="button">Dispatcher: off</button>
@@ -410,9 +410,9 @@
 <dialog id="createDlg">
   <div class="dlg-head"><h1 style="font-size:16px; margin:0">Create a channel</h1><button class="x-btn" id="createX" type="button">&#10005;</button></div>
   <input type="text" id="ccName" maxlength="24" placeholder="Channel name (3-24 chars)" autocomplete="off" style="width:100%; margin-top:12px">
-  <div class="cat-row" id="ccCats" style="margin-top:10px"></div>
+  <div class="sec-label">Channel preset</div><div class="cat-row" id="ccCats" style="margin-top:10px"></div><p class="sub" id="ccPresetHelp"></p>
   <input type="password" id="ccPass" maxlength="40" placeholder="Password (optional)" autocomplete="off" style="width:100%; margin-top:10px">
-  <p class="sub" style="font-size:11px; margin-top:6px">A password changes the secret peer-channel address. The password itself is not stored. Anyone given the secret address could connect, so share it carefully. Each new channel has a random ID. Share its ID and, if set, its password. This is secret-based access, not server-authenticated media. Public channels can be discovered; add a strong password for a private crew.</p>
+  <div class="sec-label">Description / rules</div><textarea id="ccRules" maxlength="300" rows="2" placeholder="Short rules or purpose (optional)" style="width:100%"></textarea><div class="sec-label">Who can talk in this app</div><select id="ccTalk" style="width:100%;padding:10px"><option value="all">Everyone</option><option value="owner">Creator only (client-side gate)</option></select><p class="sub">Creator-only is a courtesy gate in this app, not secure authorization. Modified clients can bypass it.</p><div class="sec-label">Local expiry</div><select id="ccExpiry" style="width:100%;padding:10px"><option value="0">No local expiry</option><option value="24">Hide / stop after 24 hours</option><option value="168">Hide / stop after 7 days</option></select><p class="sub">Expiry hides/stops the channel in this app. It does not delete server metadata, recordings, or other peers' copies/access.</p><label class="sub"><input id="ccMute" type="checkbox"> Mute incoming voice when joining (this device)</label><p class="sub" style="font-size:11px; margin-top:6px">A password changes the secret peer-channel address. The password itself is not stored. Anyone given the secret address could connect, so share it carefully. Each new channel has a random ID. Share its ID and, if set, its password. This is secret-based access, not server-authenticated media. Public channels can be discovered; add a strong password for a private crew.</p>
   <div class="row" style="margin-top:10px"><button class="mini-btn on" id="ccGo" type="button" style="flex:1; padding:10px">Create</button></div>
   <p class="sub" id="ccMsg" style="margin-top:6px"></p>
 </dialog>
@@ -556,6 +556,8 @@ function fbJoinCheck(chan,cb){
       var d=doc.data();
       if(d.banned&&d.banned.indexOf(fbUid)>=0){ cb(false,'You are banned from this channel.'); return; }
       chan._fbOwner=d.ownerUid||null;
+      if(d.options)chan.options=d.options;
+      if(chan.options&&chan.options.expires&&Date.now()>chan.options.expires){cb(false,'This channel has expired in this app. It was not remotely deleted.');return;}
       cb(true);
     }).catch(function(){ cb(true); });
   });
@@ -840,7 +842,7 @@ CHANNELS.forEach(function(c){
    password itself. Owner = whoever holds slot 1 (creator claims it at creation;
    first-come enforced by the signaling server). Discovery is a best-effort
    lobby (oc27x-dir-s1..8): members of public channels advertise while online. */
-var CATS=[['stream','Streaming'],['event','Event staff'],['rp','Roleplay'],['other','Other']];
+var CATS=[['event','Event staff'],['work','Work crew'],['family','Family / friends'],['volunteer','Volunteer group'],['rp','RP server'],['other','Other']];
 var DIR_SLOTS=8, advPeer=null, dirTimer=null, dirResults={};
 function normName(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
 function publicChannelId(base,pw){return pw?sha256hex(base+'|'+pw).then(function(h){return 'r'+base+'p'+h;}):Promise.resolve('r'+base);}
@@ -856,7 +858,7 @@ function saveMyChans(l){ save('mychans',l); }
 function addMyChan(rec){ var l=getMyChans().filter(function(c){return c.id!==rec.id;}); l.unshift(rec); saveMyChans(l.slice(0,30)); renderMyChans(); }
 function myOwnerRec(id){ var l=getMyChans(); for(var i=0;i<l.length;i++) if(l[i].id===id&&l[i].owner) return l[i]; return null; }
 function dirSlot(i){ return APP+'-dir-s'+i; }
-function chanAnnounce(){ var o={t:'chan-a',name:channel.name,cat:channel.cat,prot:!!channel.prot}; var r=channel&&myOwnerRec(channel.id); if(r&&r.av) o.av=r.av; return o; }
+function chanAnnounce(){ var o={t:'chan-a',name:channel.name,cat:channel.cat,prot:!!channel.prot,options:channel.options||null}; var r=channel&&myOwnerRec(channel.id); if(r&&r.av) o.av=r.av; return o; }
 function dirAd(){ var o={t:'dir-ad',name:channel.name,cat:channel.cat,id:channel.id,members:visCount()}; var l=getMyChans(); for(var i=0;i<l.length;i++){ if(l[i].id===channel.id&&l[i].av){ o.av=l[i].av; break; } } return o; }
 function catLabel(k){ for(var i=0;i<CATS.length;i++) if(CATS[i][0]===k) return CATS[i][1]; return 'Other'; }
 function chanItemEl(c,desc,meta){
@@ -983,12 +985,15 @@ function probeChan(id,cb){
   p.on('error',function(e){ if(e.type!=='peer-unavailable') fin(false); });
 }
 /* create flow */
-var ccCat='stream';
+var ccCat='event';
+var createPresets={event:'Event staff: door, stage, security, parking. A password is recommended.',work:'Work crew: coordinate jobs. Do not share sensitive customer details.',family:'Family / friends: use a password and share it privately.',volunteer:'Volunteer group: informal coordination, not an official agency channel.',rp:'Fictional roleplay only. Suggested channels: Dispatch, PD, Fire/EMS, Tac 1-3, Civ. Create one channel at a time. Not a game-server integration or real police service.',other:'General-use channel. Public without a password.'};
+function showCreatePreset(){el('ccPresetHelp').textContent=createPresets[ccCat]||createPresets.other;el('ccRules').placeholder=ccCat==='rp'?'Fictional roleplay server rules':'Short rules or purpose (optional)';}
+
 CATS.forEach(function(c){
   var b=document.createElement('button'); b.type='button'; b.className='st-btn'+(c[0]===ccCat?' sel':''); b.textContent=c[1];
-  b.onclick=function(){ ccCat=c[0]; Array.prototype.forEach.call(ccCats.children,function(x){x.classList.remove('sel');}); b.classList.add('sel'); };
+  b.onclick=function(){ ccCat=c[0];showCreatePreset(); Array.prototype.forEach.call(ccCats.children,function(x){x.classList.remove('sel');}); b.classList.add('sel'); };
   ccCats.appendChild(b);
-});
+});showCreatePreset();
 /* tabs, sheets, contacts */
 var tabPanes={Channels:el('tabChannels'),Contacts:el('tabContacts'),Town:el('tabTown'),Agencies:el('tabAgencies'),Settings:el('tabSettings')};
 function switchTab(name){
@@ -1061,6 +1066,7 @@ ccGo.onclick=function(){
   if(name.length<3||name.length>24){ ccMsg.textContent='Name needs 3-24 characters.'; return; }
   if(!/^[a-z0-9][a-z0-9 \-_.]*$/.test(name)){ ccMsg.textContent='Letters, numbers, spaces, dash, dot, underscore only.'; return; }
   ccMsg.textContent='Checking that name…'; ccGo.disabled=true;
+  var hours=Number(el('ccExpiry').value)||0;var options={rules:el('ccRules').value.trim().slice(0,300),talk:el('ccTalk').value==='owner'?'owner':'all',expires:hours?Date.now()+hours*3600000:0,rp:ccCat==='rp'};
   var baseId=agRandom(8);
   publicChannelId(baseId,pw).then(function(id){
    fbCreateChannel(id,name,ccCat,!!pw,function(fok,fmsg){
@@ -1072,10 +1078,12 @@ ccGo.onclick=function(){
       var to=setTimeout(function(){ if(!settled){ settled=true; try{p.destroy();}catch(e){} ccGo.disabled=false; ccMsg.textContent='Network problem — try again.'; } },5000);
       p.on('open',function(){
         if(settled) return; settled=true; clearTimeout(to); ccGo.disabled=false; ccMsg.textContent='';
-        var rec={name:name,cat:ccCat,id:id,prot:!!pw,owner:true,created:Date.now()};
+        var rec={name:name,cat:ccCat,id:id,prot:!!pw,owner:true,created:Date.now(),options:options};
+        if(fbReady)fdb.collection('channels').doc(id).update({options:options}).catch(function(){toast('Channel ready, but options could not sync.');});
+        save('joinMuted:'+id,el('ccMute').checked);
         addMyChan(rec);
         closeDlg(createDlg); ccName.value=''; ccPass.value='';
-        startJoin({id:id,name:name,cat:ccCat,training:ccCat==='oem',prot:!!pw,user:true},p);
+        startJoin({id:id,name:name,cat:ccCat,training:false,prot:!!pw,user:true,options:options},p);
       });
       p.on('error',function(e){
         if(settled) return; settled=true; clearTimeout(to); try{p.destroy();}catch(x){} ccGo.disabled=false;
@@ -1097,7 +1105,7 @@ jcGo.onclick=function(){
       jcMsg.textContent=''; closeDlg(joinDlg); jcName.value=''; jcPass.value='';
       var cat=meta.cat||'other', nm=String(meta.name||name).slice(0,24);
       addMyChan({name:nm,cat:cat,id:id,prot:!!pw,owner:false,created:Date.now()});
-      startJoin({id:id,name:nm,cat:cat,training:cat==='oem',prot:!!pw,user:true});
+      startJoin({id:id,name:nm,cat:cat,training:cat==='oem',prot:!!pw,user:true,options:meta.options||null});
     });
   });
 };
@@ -1527,6 +1535,7 @@ tabStd.onclick=function(){ codesMode='std'; renderCodes(); };
 tabRp.onclick=function(){ codesMode='rp'; renderCodes(); };
 allCodesBtn.onclick=function(){ codesAllOpen=!codesAllOpen; renderCodes(); };
 renderCodes();
+el('joinMuteBtn').onclick=function(){if(!channel)return;var m=!load('joinMuted:'+channel.id,false);save('joinMuted:'+channel.id,m);el('joinMuteBtn').textContent=m?'Incoming: muted':'Incoming: on';conns.forEach(function(u){if(u.audioGain)u.audioGain.gain.value=(!busyAudio()&&u.talking&&!u.muted)?1:0;if(u.audioEl)u.audioEl.muted=busyAudio()||u.muted||!u.talking;});};
 var textBtn=el('textBtn'), textRow=el('textRow'), chatInput=el('chatInput'), chatSend=el('chatSend');
 textBtn.onclick=function(){
   textRow.classList.toggle('hidden');
@@ -1618,7 +1627,7 @@ el('replayClear').onclick=function(){if(!channel)return;var cid=channel.id;repla
 el('replayClearAll').onclick=function(){replayRows().then(function(r){return replayDeleteIds(r.map(function(x){return x.id;}));}).then(replayRender);};
 el('replayAgree').onclick=function(){save('replayNotice39',true);closeDlg(el('replayNotice'));var fn=replayPendingJoin;replayPendingJoin=null;if(fn)fn();};
 el('replayCancel').onclick=function(){replayPendingJoin=null;closeDlg(el('replayNotice'));};
-function busyAudio(){return myStatus==='Busy';}
+function busyAudio(){return myStatus==='Busy'||!!(channel&&load('joinMuted:'+channel.id,false));}
 
 /* ---------- peer lifecycle ---------- */
 function slotId(i){ return APP+'-'+channel.id+'-s'+i; }
@@ -1640,7 +1649,9 @@ function startJoin(chan, preclaimed){
 }
 function proceedJoin(chan, preclaimed){
   channel=chan;
-  replayRender();toolRender();
+  if(chan.options&&chan.options.expires){setTimeout(function(){if(channel&&channel.id===chan.id){leaveChannel();toast('Local channel expiry reached. Not a remote deletion.');}},Math.min(2147483647,Math.max(0,chan.options.expires-Date.now())));}
+  el('channelRules').textContent=(chan.cat==='rp'?'FICTIONAL ROLEPLAY ONLY. ':'')+(chan.options&&chan.options.rules||'')+(chan.options&&chan.options.talk==='owner'?' Creator-only talk: client-side gate, not secure.':'');
+  replayRender();toolRender();el('joinMuteBtn').textContent=load('joinMuted:'+chan.id,false)?'Incoming: muted':'Incoming: on';
   agWatchSession(chan);
   if(chan.id.charAt(0)==='r') toast('Channel ID: OC-'+chan.id.slice(1,17));
   homeView.classList.add('hidden'); chanView.classList.remove('hidden');
@@ -1932,6 +1943,7 @@ function detachMeter(row){
 }
 
 function pressPTT(){
+  if(channel&&channel.options&&channel.options.talk==='owner'&&channel._fbOwner!==fbUid&&!myOwnerRec(channel.id)){toast('Creator-only talk in this app. Client-side gate, not secure authorization.');return;}
   if(tx) return;
   if(Date.now()<adminMutedUntil){ toast('You are muted by the owner.'); return; }
   if(locked&&!hasMod()){ toast('Channel locked by owner.'); return; }
@@ -2287,7 +2299,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
 el('homeInstall').onclick=function(){installBtn.click();};
 el('homeCreate').onclick=function(){el('sheetCreate').click();};
 el('homeJoin').onclick=function(){el('sheetJoin').click();};
-el('homeEvent').onclick=function(){el('sheetCreate').click();ccCat='event';ccName.placeholder='Your event or crew name';ccPass.placeholder='Crew password (recommended)';};
+el('homeEvent').onclick=function(){el('sheetCreate').click();ccCat='event';showCreatePreset();ccName.placeholder='Your event or crew name';ccPass.placeholder='Crew password (recommended)';};
 chanTitle.onclick=function(){if(channel&&channel.id.charAt(0)==='r'){var id='OC-'+channel.id.slice(1,17);toast(id+' · share password separately');if(navigator.clipboard)navigator.clipboard.writeText(id).catch(function(){});}};
 var deferredInstall=null;
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredInstall=e; });
