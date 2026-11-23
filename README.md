@@ -17,6 +17,13 @@ The license does not allow selling or distributing the raw files standalone.
   https://pixabay.com/sound-effects/film-special-effects-button-click-514785/
 - sfx-tail.mp3 and sfx-static.mp3: "Radio Static" by freesound_community
   https://pixabay.com/sound-effects/film-special-effects-radio-static-6382/
+- sfx-release.mp3: "Radio Beep 2" by backroomsaudiouoloads - the roger beep when the
+  talk button is released (trimmed)
+  https://pixabay.com/sound-effects/technology-radio-beep-2-487087/
+- sfx-incoming.mp3: double beep built from "088524_Walkie Talkie" by freesound_community
+  (pitch-shifted and repeated) - the incoming-transmission sound when another unit
+  starts talking. Placeholder pending the owner's own clip.
+  https://pixabay.com/sound-effects/film-special-effects-walkie-talkie-83500/
 
 If a recording fails to load, the app falls back to tones synthesized in-browser with
 WebAudio (the talk-permit fallback is an MDC-style data chirp + triple permit beep,
