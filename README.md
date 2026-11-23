@@ -25,13 +25,16 @@ The license does not allow selling or distributing the raw files standalone.
   starts talking. Placeholder pending the owner's own clip.
   https://pixabay.com/sound-effects/film-special-effects-walkie-talkie-83500/
 
-- beeps/clip1.mp3, clip2.mp3, clip3.mp3, clip4.mp3: the owner's own recordings,
-  supplied by him on 2026-11-23 with permission to use them in the app
-  ("free to use"). Selectable in Settings as release and incoming beeps
-  (clip4 is his incoming pick). clip2 and clip3 were converted from ogg/opus
-  to mp3 so they also play in iOS Safari; content otherwise unchanged.
-
 If a recording fails to load, the app falls back to tones synthesized in-browser with
 WebAudio (the talk-permit fallback is an MDC-style data chirp + triple permit beep,
 built from scratch). Voice filtering is synthesized. No Motorola or other copyrighted
 recordings are used anywhere.
+
+
+## Agency access and prototype limits
+Agencies have no public directory. App admins are allowlisted by Firebase UID in appAdmins/{uid}, created only by the project owner in the Firebase console. A local owner code is NOT authority to verify an agency. The app admin verifies out-of-band, then assigns the agency owner UID using Settings > Official agencies > Account and agency admin. Give that owner the agency ID, which alone grants nothing. Owners create random 128-bit invite links with expiry and per-invite max uses. Redemption increments uses and creates membership atomically. Member removal rotates a random 256-bit agency secret in the same transaction; remaining online apps disconnect and rejoin the new secret-derived namespace. No cached/offline agency admission. Secret sharing remains possible; this is not server-authenticated voice. Old modified clients can keep communicating on an old namespace but cannot derive the new namespace without the new secret. Rotation is not retroactive deletion. Per-invite maxUses is enforced; total membership is a soft cap because multiple invites can be created. Anonymous account access is tied to this browser; clearing data loses it. Requests and membership metadata are stored; audio is not recorded.
+
+## Generated short tone files
+All tones/press1.wav through press9.wav, release1.wav through release9.wav, and incoming1.wav through incoming9.wav are original synthesized waveforms generated for this app, not third-party samples. No attribution requirement or third-party license. Press/release under 0.4 seconds, incoming under 0.6 seconds, 16kHz mono PCM. The app embeds the waveform generator, so all 27 sounds work offline without downloading files. No external samples are used. Existing owner-supplied clips remain available; Clip 2 and Clip 3 are long source clips and are marked as such. Press defaults to Original; release to owner Clip 1; incoming to owner Clip 4.
+
+Channel reference: https://support.zello.com/zc/channel-moderation-guidelines describes public/open and password-protected Zello channels. This app implements random channel IDs and optional password-derived peer namespaces, not Zello accounts or their server authorization. Never claim equivalent security.
