@@ -486,7 +486,7 @@ var peer=null, mySlot=0, myName='', myStatus='Available', myNote='', channel=nul
 var conns=new Map();
 var scans={}, SCAN_MAX=3; /* multi-channel scan state, populated by the scan module below */
 var myCalls=[];
-var micStream=null, micFailed=false;
+var micStream=null, micRaw=null, micGate=null, micFailed=false;
 var tx=false, floorHolder=null, floorName='', floorIsDsp=false;
 var dispatcher=false, locked=false, ownerOnline=false, ownerPeer=null;
 var isOwner=false, chanOwner=false, offline=false;
@@ -628,6 +628,8 @@ function playSfx(k,opts){
     var g=ctx.createGain(); g.gain.value=(opts&&opts.gain!=null)?opts.gain:1;
     src.connect(g); g.connect(ctx.destination);
     src.start(ctx.currentTime+((opts&&opts.delay)||0));
+    if((k==='press'||k==='release')&&buf.duration>1)src.stop(ctx.currentTime+.85);
+    if(k==='incoming'&&buf.duration>2)src.stop(ctx.currentTime+1.5);
     return {src:src,g:g};
   }catch(e){ return null; }
 }
@@ -1402,7 +1404,7 @@ function sndPreview(which){
   var sel=sndSel(which);
   if(sel==='none')return;
   if(sel==='orig'){ playSfx(which==='press'?'press':(which==='rel'?'release':'incoming')); return; }
-  try{ var a=new Audio(USER_CLIPS[sel]); a.play().catch(function(){}); }catch(e){}
+  try{ var a=new Audio(USER_CLIPS[sel]); a.play().catch(function(){}); if(sel==='clip2'||sel==='clip3')setTimeout(function(){a.pause();},which==='inc'?1500:800); }catch(e){}
 }
 function sndRow(rowEl, which, opts){
   if(!rowEl) return;
@@ -1594,7 +1596,9 @@ function wirePeer(){
   peer.on('error', function(e){ if(e.type!=='peer-unavailable') feedSys('net: '+esc(e.type)); });
   peer.on('connection', function(conn){ setupConn(conn); });
   peer.on('call', function(call){
-    try{ call.answer(); }catch(e){}
+    warmCalls.set(call.peer,call);
+    call.on('close',function(){warmCalls.delete(call.peer);});
+    try{ call.answer(micStream||undefined); }catch(e){}
     call.on('stream', function(rs){ playStream(call.peer, rs); });
     call.on('close', function(){ stopStream(call.peer); });
     call.on('error', function(){});
@@ -1606,7 +1610,7 @@ function wirePeer(){
    they pile up until Chrome refuses new ones, so every attempt gets a 6s
    self-destruct unless it opens. */
 var warmCalls=new Map();
-function warmPeer(id){if(!peer||!micStream||warmCalls.has(id))return;try{var c=peer.call(id,micStream);warmCalls.set(id,c);c.on('close',function(){warmCalls.delete(id);});}catch(e){}}
+function warmPeer(id){if(!peer||!micStream||warmCalls.has(id)||peer.id>id)return;try{var c=peer.call(id,micStream);c.on('stream',function(rs){playStream(id,rs);});warmCalls.set(id,c);c.on('close',function(){warmCalls.delete(id);});}catch(e){}}
 function warmAllPeers(){conns.forEach(function(u,id){warmPeer(id);});}
 var pendingConns={};
 function scan(){
@@ -1709,6 +1713,7 @@ function handleData(from,d,conn){
       if(!u._lastBusyNote||bn-u._lastBusyNote>10000){ u._lastBusyNote=bn; try{ u.conn.send({t:'busy-note',name:myName}); }catch(e){} }
     }
   }
+  else if(d.t==='mic-ready'){var wc=warmCalls.get(from);if(wc){try{wc.close();}catch(e){}warmCalls.delete(from);}setTimeout(function(){warmPeer(from);},200);}
   else if(d.t==='busy-note'){
     /* automatic reply from a unit whose status is Busy */
     feedSys('\u23F1 <b>'+esc(d.name||'Unit')+'</b> is busy right now');
@@ -1856,13 +1861,13 @@ function ensureMic(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ micFailed=true; return; }
   ensureMic.pending=true;
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
-    ensureMic.pending=false; micStream=s; micStream.getAudioTracks().forEach(function(t){t.enabled=false;});warmAllPeers();
+    ensureMic.pending=false; micRaw=s;var ctx=ac(),src=ctx.createMediaStreamSource(s),gate=ctx.createGain(),dest=ctx.createMediaStreamDestination();gate.gain.value=0;src.connect(gate);gate.connect(dest);micGate=gate;micStream=dest.stream;warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();broadcast({t:'mic-ready'});setTimeout(warmAllPeers,100);
   }).catch(function(){
     ensureMic.pending=false; micFailed=true;toast('Microphone blocked or unavailable. Tap TALK for help.');
   });
 }
 function startTx(){
-  micStream.getAudioTracks().forEach(function(t){t.enabled=true;});
+  if(micGate)micGate.gain.value=1;
   tx=true; floorHolder=peer?peer.id:null; floorName=myName;
   /* press = the owner's chosen key-up clip, raw (it already contains the click + burst);
      no extra squelch click on top. Fallback chain lives inside keyChirp. */
@@ -1881,7 +1886,7 @@ function releasePTT(yielded){
   rogerBeep();
   broadcast({t:'floor',on:false,name:myName});
   if(txFeedRow){ detachMeter(txFeedRow); txFeedRow.remove(); txFeedRow=null; }
-  if(micStream)micStream.getAudioTracks().forEach(function(t){t.enabled=false;});
+  if(micGate)micGate.gain.value=0;
   refreshFloorUI();
 }
 var pttLock=false, tapBtn=el('tapBtn');
@@ -1905,6 +1910,8 @@ document.addEventListener('keyup',function(e){ if(e.code==='Space'){ releasePTT(
 
 function playStream(pid,rs){
   var u=conns.get(pid);
+  stopStream(pid);
+  var sink=new Audio();sink.srcObject=rs;sink.autoplay=true;sink.volume=0;sink.play().catch(function(){});if(u)u.decodeSink=sink;
   if(liveFeedRow&&floorHolder===pid) attachMeter(liveFeedRow, rs);
   var ctx=ac();
   if(ctx&&radioFxOn){
@@ -1932,6 +1939,7 @@ function playStream(pid,rs){
 }
 function stopStream(pid){
   var u=conns.get(pid);
+  if(u&&u.decodeSink){u.decodeSink.srcObject=null;u.decodeSink=null;}
   if(u&&u.audioNodes){ u.audioNodes.forEach(function(n){ try{n.disconnect();}catch(e){} }); u.audioNodes=null; }
   if(u&&u.audioEl){ try{u.audioEl.srcObject=null; u.audioEl.remove();}catch(e){} u.audioEl=null; }
 }
@@ -2152,6 +2160,7 @@ function leaveChannel(){
   conns.clear();
   warmCalls.forEach(function(c){try{c.close();}catch(e){}});warmCalls.clear();
   if(micStream){micStream.getTracks().forEach(function(t){t.stop();});micStream=null;}
+  if(micRaw){micRaw.getTracks().forEach(function(t){t.stop();});micRaw=null;}micGate=null;
   if(peer){ try{peer.destroy();}catch(e){} peer=null; }
   tx=false; floorHolder=null; locked=false; ownerOnline=false; ownerPeer=null; chanOwner=false; banUids={};
   stopAdvertising();
