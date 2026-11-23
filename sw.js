@@ -1,7 +1,7 @@
 /* OpenChannel prototype service worker: offline app shell only.
    Network-first for HTML so updates reach installed copies; cache-first for icons.
    Never caches the signaling channel or the PeerJS CDN (cross-origin). */
-var CACHE = 'oc27-v3';
+var CACHE = 'oc27-v4';
 var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
