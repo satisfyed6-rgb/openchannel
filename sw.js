@@ -1,7 +1,7 @@
 /* OpenChannel prototype service worker: offline app shell only.
    Network-first for HTML so updates reach installed copies; cache-first for icons.
    Never caches the signaling channel or the PeerJS CDN (cross-origin). */
-var CACHE = 'oc27-v35'
+var CACHE = 'oc27-v36'
 var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './sfx-press.mp3', './sfx-beep.mp3', './sfx-click.mp3', './sfx-tail.mp3', './sfx-static.mp3', './sfx-release.mp3', './sfx-incoming.mp3', './beeps/clip1.mp3', './beeps/clip2.mp3', './beeps/clip3.mp3', './beeps/clip4.mp3'];
 
 self.addEventListener('install', function (e) {
@@ -23,16 +23,16 @@ self.addEventListener('fetch', function (e) {
     e.respondWith(
       fetch(e.request).then(function (resp) {
         var copy = resp.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+        caches.open(CACHE).then(function (c) { if(resp.ok)c.put(e.request, copy); });
         return resp;
       }).catch(function () { return caches.match(e.request).then(function (r) { return r || caches.match('./index.html'); }); })
     );
   } else {
     e.respondWith(
       caches.match(e.request).then(function (hit) {
-        return hit || fetch(e.request).then(function (resp) {
+        return (hit&&hit.ok?hit:null) || fetch(e.request).then(function (resp) {
           var copy = resp.clone();
-          caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+          caches.open(CACHE).then(function (c) { if(resp.ok)c.put(e.request, copy); });
           return resp;
         }).catch(function () { return caches.match('./index.html'); });
       })
