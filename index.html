@@ -175,6 +175,8 @@
   .cat-row .st-btn{flex:1 1 40%; justify-content:center}
   .av-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:12px}
   .av-grid button{font-size:22px; padding:7px 0; background:var(--panel2); border:1px solid var(--accent); border-radius:10px; cursor:pointer}
+
+.talk-tools{flex-wrap:wrap;justify-content:center;gap:6px}.talk-tools .mini-btn{flex:0 1 auto;padding:10px 8px}
 </style>
 </head>
 <body>
@@ -1326,7 +1328,7 @@ function wireScanPeer(sc){
     call.on('close',function(){ scanStopAudio(sc,call.peer); });
     call.on('error',function(){});
   });
-  p.on('disconnected',function(){ try{ p.reconnect(); }catch(e){} });
+  p.on('disconnected',function(){if(sc.dead)return;stopScan(sc.rec.id);toast('Scan paused: connection lost. Tap Scan to restart.');renderMyChans();});
 }
 function scanSweep(sc){
   if(sc.dead||!sc.peer||sc.peer.destroyed) return;
@@ -1677,7 +1679,12 @@ function join(slot){
     else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){ settled=true; clearTimeout(to); try{p.destroy();}catch(x){} enterOffline(); }
   });
 }
+var channelScanTimer=null,reconnectTimer=null,reconnectAttempts=0,networkDown=false,networkRow=null,lastNetError='',lastNetErrorAt=0;
+function netMessage(text){if(!networkRow||!networkRow.isConnected){networkRow=document.createElement('div');networkRow.className='sys';networkRow.style.cssText='text-align:center;color:var(--dim);padding:10px;font-size:12px';feed.appendChild(networkRow);}networkRow.textContent=text;}
+function stopNetworkTimers(){clearInterval(channelScanTimer);channelScanTimer=null;clearTimeout(reconnectTimer);reconnectTimer=null;}
+function scheduleReconnect(p){if(peer!==p||p.destroyed||reconnectTimer)return;networkDown=true;if(tx)releasePTT();setStatus('CONNECTION LOST — reconnecting');ptt.disabled=true;if(reconnectAttempts>=4){setStatus('CONNECTION PAUSED — reopen channel');netMessage('Connection paused. Check your network, then leave and reopen this channel.');return;}var delay=[2000,5000,10000,20000][reconnectAttempts];netMessage('Signaling connection lost. Retrying in '+delay/1000+'s ('+(reconnectAttempts+1)+'/4).');reconnectTimer=setTimeout(function(){reconnectTimer=null;if(peer!==p||p.destroyed)return;reconnectAttempts++;if(navigator.onLine===false){scheduleReconnect(p);return;}try{if(p.disconnected)p.reconnect();}catch(e){}if(networkDown)scheduleReconnect(p);},delay);}
 function joined(p,slot){
+  stopNetworkTimers();networkDown=false;networkRow=null;reconnectAttempts=0;pendingConns={};
   peer=p; mySlot=slot; wirePeer();
   bans=load('bans:'+channel.id,[]);
   chanOwner=!!(channel.user&&(mySlot===1||(channel._fbOwner&&channel._fbOwner===fbUid)));
@@ -1689,11 +1696,13 @@ function joined(p,slot){
   if(hasMod()){ announceOwner(); renderAdmin(); adminPanel.classList.remove('hidden'); }
   if(channel.user&&!channel.prot&&channel.cat!=='dm'&&!channel.agencyId) startAdvertising();
   scan();
-  setInterval(scan,25000);
+  channelScanTimer=setInterval(scan,25000);
 }
 
 function wirePeer(){
-  peer.on('error', function(e){ if(e.type!=='peer-unavailable') feedSys('net: '+esc(e.type)); });
+  var wired=peer;
+  peer.on('error', function(e){if(peer!==wired)return;var type=e.type||'network';if(['disconnected','network','server-error','socket-error','socket-closed'].indexOf(type)>=0){scheduleReconnect(wired);return;}if(type==='peer-unavailable')return;var now=Date.now();if(type===lastNetError&&now-lastNetErrorAt<30000)return;lastNetError=type;lastNetErrorAt=now;netMessage('Connection issue: '+type+'. Leave and reopen if it persists.');});
+  peer.on('open',function(){if(peer!==wired)return;networkDown=false;clearTimeout(reconnectTimer);reconnectTimer=null;reconnectAttempts=0;netMessage('Connection restored.');refreshFloorUI();scan();});
   peer.on('connection', function(conn){ setupConn(conn); });
   peer.on('call', function(call){
     warmCalls.set(call.peer,call);
@@ -1703,18 +1712,18 @@ function wirePeer(){
     call.on('close', function(){ stopStream(call.peer); });
     call.on('error', function(){});
   });
-  peer.on('disconnected', function(){ try{ peer.reconnect(); }catch(e){} });
+  peer.on('disconnected', function(){scheduleReconnect(wired);});
 }
 
 /* Each connect to an empty slot makes an RTCPeerConnection; without a close
    they pile up until Chrome refuses new ones, so every attempt gets a 6s
    self-destruct unless it opens. */
 var warmCalls=new Map();
-function warmPeer(id){if(!peer||!micStream||warmCalls.has(id)||peer.id>id)return;try{var c=peer.call(id,micStream);c.on('stream',function(rs){playStream(id,rs);});warmCalls.set(id,c);c.on('close',function(){warmCalls.delete(id);});}catch(e){}}
+function warmPeer(id){if(!peer||peer.disconnected||networkDown||!micStream||warmCalls.has(id)||peer.id>id)return;try{var c=peer.call(id,micStream);c.on('stream',function(rs){playStream(id,rs);});warmCalls.set(id,c);c.on('close',function(){warmCalls.delete(id);});}catch(e){}}
 function warmAllPeers(){conns.forEach(function(u,id){warmPeer(id);});}
 var pendingConns={};
 function scan(){
-  if(!peer||peer.destroyed) return;
+  if(!peer||peer.destroyed||peer.disconnected||networkDown||navigator.onLine===false) return;
   for(var i=1;i<=SLOTS;i++){
     if(i===mySlot) continue;
     var id=slotId(i);
@@ -1864,6 +1873,7 @@ function handleData(from,d,conn){
 
 /* ---------- floor / TX ---------- */
 function refreshFloorUI(){
+  if(networkDown){setStatus('CONNECTION LOST — reconnecting');ptt.disabled=true;pttHint.textContent='Check your network. Reconnect attempts are limited.';return;}
   if(tx){ led.className='led tx'; setStatus('TRANSMITTING'); ptt.classList.add('tx'); return; }
   ptt.classList.remove('tx');
   if(floorHolder){ led.className='led rx'; setStatus(floorName+(floorIsDsp?' (dispatcher)':'')+' is talking'); }
@@ -1945,6 +1955,7 @@ function detachMeter(row){
 function pressPTT(){
   if(channel&&channel.options&&channel.options.talk==='owner'&&channel._fbOwner!==fbUid&&!myOwnerRec(channel.id)){toast('Creator-only talk in this app. Client-side gate, not secure authorization.');return;}
   if(tx) return;
+  if(networkDown||!peer||peer.disconnected){toast('Connection lost. Wait for reconnect or reopen this channel.');return;}
   if(Date.now()<adminMutedUntil){ toast('You are muted by the owner.'); return; }
   if(locked&&!hasMod()){ toast('Channel locked by owner.'); return; }
   if(floorHolder&&!dispatcher){ toast('Net busy — '+floorName+' is talking'); return; }
@@ -2259,6 +2270,7 @@ function enterOffline(){
   feedSys('Signaling unreachable — showing offline demo');
 }
 function leaveChannel(){
+  stopNetworkTimers();networkDown=false;networkRow=null;pendingConns={};
   replayStopAll();
   if(agSessionUnsub){agSessionUnsub();agSessionUnsub=null;}
   releasePTT();
