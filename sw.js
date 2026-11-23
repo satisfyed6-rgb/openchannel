@@ -1,7 +1,7 @@
 /* OpenChannel prototype service worker: offline app shell only.
    Network-first for HTML so updates reach installed copies; cache-first for icons.
    Never caches the signaling channel or the PeerJS CDN (cross-origin). */
-var CACHE = 'oc27-v23'
+var CACHE = 'oc27-v24'
 var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './sfx-press.mp3', './sfx-beep.mp3', './sfx-click.mp3', './sfx-tail.mp3', './sfx-static.mp3', './sfx-release.mp3', './sfx-incoming.mp3'];
 
 self.addEventListener('install', function (e) {
