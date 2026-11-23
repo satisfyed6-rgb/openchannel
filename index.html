@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
   :root{
-    --bg:#101418; --panel:#171d24; --panel2:#1d242d; --line:#2a333e;
+    --bg:#0e1318; --panel:#161d25; --panel2:#1c2530; --line:#28323e;
     --lcd:#0b1f16; --lcd-fg:#5df2a6; --amber:#ffb02e; --red:#ff5a5a;
     --text:#e8edf2; --dim:#8b97a3; --accent:#3ea6ff;
   }
@@ -22,53 +22,86 @@
   body{margin:0; background:var(--bg); color:var(--text);
     font:15px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
   button{font:inherit; color:inherit}
-  .wrap{max-width:920px; margin:0 auto; padding:14px}
-  .topbar{display:flex; align-items:center; gap:10px; padding:10px 0}
-  .dot{width:12px;height:12px;border-radius:50%;background:var(--lcd-fg);box-shadow:0 0 8px var(--lcd-fg)}
+  .wrap{max-width:640px; margin:0 auto; padding:12px 14px 20px}
+  .topbar{display:flex; align-items:center; gap:9px; padding:8px 0}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--lcd-fg);box-shadow:0 0 8px var(--lcd-fg)}
   .brand{font-weight:700; letter-spacing:.5px}
-  .pill{font-size:11px; color:#0b0f13; background:var(--amber); border-radius:4px; padding:2px 7px; font-weight:700; letter-spacing:1px}
-  .gear{margin-left:auto; background:none; border:1px solid var(--line); border-radius:8px; padding:6px 10px; cursor:pointer; color:var(--dim)}
+  .pill{font-size:10px; color:#0b0f13; background:var(--amber); border-radius:4px; padding:2px 6px; font-weight:700; letter-spacing:1px}
+  .gear{margin-left:auto; background:none; border:1px solid var(--line); border-radius:8px; padding:5px 10px; cursor:pointer; color:var(--dim); font-size:13px}
   .gear.owner{border-color:var(--amber); color:var(--amber)}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; margin-top:14px}
-  h1{font-size:20px; margin:0 0 4px}
-  .sub{color:var(--dim); margin:0 0 14px}
-  input[type=text]{width:100%; padding:12px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:16px}
-  .chan-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0}
-  .chan-btn{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:14px 12px; cursor:pointer; text-align:left}
-  .chan-btn:hover{border-color:var(--accent)}
-  .chan-btn .n{font-weight:700}
-  .chan-btn .d{font-size:12px; color:var(--dim)}
-  .chan-btn .tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.5px; color:#0b0f13; background:var(--amber); border-radius:3px; padding:1px 6px; margin-left:6px}
-  .big-btn{width:100%; padding:14px; border-radius:10px; border:0; background:var(--accent); color:#fff; font-weight:700; font-size:16px; cursor:pointer}
-  .big-btn:disabled{opacity:.5}
-  .lcd{background:var(--lcd); color:var(--lcd-fg); border-radius:10px; padding:12px 14px; font-family:ui-monospace,Menlo,Consolas,monospace; border:1px solid #123626}
-  .lcd .l1{font-size:18px; font-weight:700; letter-spacing:1px}
-  .lcd .l2{font-size:12px; opacity:.85; min-height:16px}
-  .lcd .led{display:inline-block; width:9px; height:9px; border-radius:50%; background:#234; margin-right:6px; vertical-align:1px}
-  .lcd .led.rx{background:var(--lcd-fg); box-shadow:0 0 8px var(--lcd-fg)}
-  .lcd .led.tx{background:var(--red); box-shadow:0 0 8px var(--red)}
-  .ptt-row{display:flex; gap:14px; align-items:center; margin-top:14px; flex-wrap:wrap}
-  .ptt{flex:0 0 auto; width:150px; height:150px; border-radius:50%; border:4px solid #39434f;
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px}
+  h1{font-size:19px; margin:0 0 4px}
+  .sub{color:var(--dim); margin:0; font-size:13px}
+  input[type=text]{width:100%; padding:11px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:16px}
+  .mini-btn{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; font-size:13px}
+  .mini-btn.on{border-color:var(--amber); color:var(--amber)}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .sec-label{font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin:14px 0 6px}
+
+  /* status segmented control */
+  .status-row{display:flex; gap:8px; margin-top:10px}
+  .st-btn{flex:1; padding:9px 0; text-align:center; border-radius:9px; border:1px solid var(--line); background:var(--panel2); cursor:pointer; font-size:13px}
+  .st-btn .sd{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px}
+  .st-btn.sel{border-color:var(--lcd-fg); color:var(--lcd-fg)}
+  .sd.av{background:var(--lcd-fg)} .sd.bs{background:var(--amber)} .sd.of{background:#5a6672}
+
+  /* home channel list */
+  .chan-item{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--panel);
+    border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:10px; cursor:pointer}
+  .chan-item:hover{border-color:var(--accent)}
+  .chan-item .ci{width:40px; height:40px; border-radius:50%; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--lcd-fg); flex:0 0 auto}
+  .chan-item .cn{font-weight:700}
+  .chan-item .cd{font-size:12px; color:var(--dim)}
+  .chan-item .tag{font-size:9px; font-weight:700; color:#0b0f13; background:var(--amber); border-radius:3px; padding:1px 5px; margin-left:6px}
+  .chan-item .arr{margin-left:auto; color:var(--dim); font-size:18px}
+
+  /* channel screen */
+  .chan-head{display:flex; align-items:center; gap:10px; padding:6px 0 2px}
+  .back-btn{background:none; border:1px solid var(--line); border-radius:8px; padding:6px 11px; cursor:pointer; color:var(--text)}
+  .chan-title{font-weight:700}
+  .chan-title .lockmark{color:var(--red); font-size:12px; margin-left:6px}
+  .lcd{background:var(--lcd); color:var(--lcd-fg); border-radius:10px; padding:9px 13px; font-family:ui-monospace,Menlo,Consolas,monospace; border:1px solid #123626; font-size:12.5px; margin-top:8px}
+  .lcd .led{display:inline-block; width:8px; height:8px; border-radius:50%; background:#234; margin-right:7px}
+  .lcd .led.rx{background:var(--lcd-fg); box-shadow:0 0 7px var(--lcd-fg)}
+  .lcd .led.tx{background:var(--red); box-shadow:0 0 7px var(--red)}
+  .banner{margin-top:12px; border:1px solid var(--amber); background:rgba(255,176,46,.12); color:var(--amber);
+    border-radius:10px; padding:11px 13px; font-weight:700; letter-spacing:.4px; font-size:13px}
+  .banner small{display:block; font-weight:500; color:#e8c98a}
+
+  /* feed */
+  .feed{margin-top:10px; min-height:140px; max-height:44vh; overflow-y:auto; display:flex; flex-direction:column; gap:7px; padding:4px 2px}
+  .fmsg{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:9px 12px; display:flex; align-items:center; gap:10px}
+  .fmsg .who{font-weight:700; font-size:13px}
+  .fmsg .meta{font-size:11px; color:var(--dim)}
+  .fmsg .play{flex:0 0 auto; width:36px; height:36px; border-radius:50%; border:1px solid var(--lcd-fg); background:none; color:var(--lcd-fg); font-size:14px; cursor:pointer}
+  .fmsg .play:disabled{border-color:var(--line); color:var(--dim)}
+  .fmsg.live{border-color:var(--red)}
+  .fmsg.live .who{color:var(--red)}
+  .fmsg .eq{flex:0 0 auto; width:36px; text-align:center; color:var(--red); font-weight:800; font-size:11px; animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.35}}
+  .fsys{align-self:center; font-size:11.5px; color:var(--dim); background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:4px 12px}
+  .fsys b{color:var(--lcd-fg); font-weight:600}
+  .fmsg .wave{flex:1; height:22px; display:flex; align-items:center; gap:2px}
+  .fmsg .wave i{display:block; width:3px; background:var(--lcd-fg); opacity:.7; border-radius:2px}
+
+  /* bottom talk bar */
+  .talkbar{position:sticky; bottom:0; margin-top:10px; padding:12px 0 8px; background:linear-gradient(transparent, var(--bg) 30%); text-align:center}
+  .ptt{width:132px; height:132px; border-radius:50%; border:4px solid #39434f;
     background:radial-gradient(circle at 35% 30%, #2b3540, #161c23); cursor:pointer;
-    color:var(--text); font-weight:800; letter-spacing:1px; font-size:16px;
+    color:var(--text); font-weight:800; letter-spacing:1px; font-size:15px;
     touch-action:none; user-select:none; -webkit-user-select:none}
   .ptt.tx{border-color:var(--red); color:var(--red); box-shadow:0 0 24px rgba(255,90,90,.35)}
   .ptt:disabled{opacity:.45; cursor:not-allowed}
-  .ptt-hint{color:var(--dim); font-size:13px; max-width:200px}
-  .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
-  .mini-btn{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; font-size:13px}
-  .mini-btn.on{border-color:var(--amber); color:var(--amber)}
-  .codes{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
-  .code-btn{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:9px 6px; cursor:pointer; font-size:13px}
+  .ptt-hint{color:var(--dim); font-size:12.5px; margin-top:8px; min-height:16px}
+  .talk-tools{display:flex; justify-content:center; gap:10px; margin-top:8px}
+
+  .codes{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px}
+  .code-btn{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:9px 6px; cursor:pointer; font-size:12.5px}
   .code-btn b{color:var(--lcd-fg)}
-  .logbox{background:#0d1116; border:1px solid var(--line); border-radius:10px; padding:10px; height:170px; overflow-y:auto;
-    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px}
-  .logbox .t{color:var(--dim); margin-right:6px}
-  .logbox .me{color:var(--accent)}
-  .logbox .sys{color:var(--amber)}
-  .users{margin-top:6px}
-  .user-row{display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--line)}
-  .user-row:last-child{border-bottom:0}
+  .users .user-row{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid var(--line)}
+  .users .user-row:last-child{border-bottom:0}
+  .user-row .sdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
   .user-row .nm{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .user-row .talking{color:var(--lcd-fg)}
   .user-row .badge{font-size:10px; font-weight:700; border-radius:3px; padding:1px 5px; background:var(--panel2); border:1px solid var(--line); color:var(--dim)}
@@ -76,24 +109,21 @@
   .user-row .badge.own{color:#0b0f13; background:var(--amber); border-color:var(--amber)}
   .user-row button{font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
   .user-row button.warn{border-color:var(--red); color:var(--red)}
-  .banner{margin-top:14px; border:1px solid var(--amber); background:rgba(255,176,46,.12); color:var(--amber);
-    border-radius:10px; padding:12px 14px; font-weight:700; letter-spacing:.5px}
-  .banner small{display:block; font-weight:500; color:#e8c98a; letter-spacing:0}
-  .locked-note{color:var(--red); font-weight:700}
   .admin-only{display:none}
   body.owner .admin-only{display:block}
   .admin-panel{border:1px solid var(--amber)}
-  .admin-panel h2{margin:0 0 8px; font-size:16px; color:var(--amber)}
-  .queue-item{border-bottom:1px solid var(--line); padding:8px 0; font-size:13px}
+  .admin-panel h2{margin:0 0 8px; font-size:15px; color:var(--amber)}
+  .queue-item{border-bottom:1px solid var(--line); padding:7px 0; font-size:13px}
   .queue-item:last-child{border-bottom:0}
   .queue-item .q-t{color:var(--dim); font-size:11px}
+  .queue-item button{font-size:11px; padding:3px 8px; border-radius:6px; border:1px solid var(--line); background:var(--panel2); cursor:pointer}
   .danger{background:var(--red); border:0; color:#fff; border-radius:8px; padding:8px 12px; cursor:pointer; font-size:13px}
-  .foot{color:var(--dim); font-size:12px; margin:18px 0 8px; line-height:1.6}
+  .foot{color:var(--dim); font-size:11.5px; margin:16px 0 4px; line-height:1.6}
   .toast{position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#232c36; border:1px solid var(--line);
     padding:10px 16px; border-radius:10px; font-size:13px; display:none; max-width:90%; z-index:9}
-  .sec-label{font-size:12px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin:16px 0 6px}
   dialog{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:14px; padding:18px; max-width:320px}
   dialog::backdrop{background:rgba(0,0,0,.6)}
+  .hidden{display:none !important}
 </style>
 </head>
 <body>
@@ -105,71 +135,90 @@
     <button class="gear" id="gearBtn" type="button">Owner</button>
   </div>
 
-  <!-- JOIN -->
-  <div class="card" id="joinCard">
-    <h1>Push-to-talk radio</h1>
-    <p class="sub">Pick a name and a channel. Hold the button to talk.</p>
-    <div class="row" style="margin-top:0"><button class="mini-btn" id="installBtn" type="button">Install as an app</button></div>
-    <input type="text" id="nickInput" maxlength="20" placeholder="Your radio name (e.g. Unit 12)" autocomplete="off">
-    <div class="chan-grid" id="chanGrid"></div>
-    <button class="big-btn" id="joinBtn" type="button" disabled>Join channel</button>
-    <p class="sub" id="joinStatus" style="margin-top:10px"></p>
+  <!-- ============ HOME ============ -->
+  <div id="homeView">
+    <div class="card">
+      <h1>Push-to-talk radio</h1>
+      <p class="sub">Tap a channel, hold the button, talk. Install it as an app for the full feel.</p>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="nickInput" maxlength="20" placeholder="Your radio name (e.g. Unit 12)" autocomplete="off" style="flex:1; min-width:160px">
+      </div>
+      <div class="sec-label">Your status</div>
+      <div class="status-row">
+        <button class="st-btn sel" data-st="Available" type="button"><span class="sd av"></span>Available</button>
+        <button class="st-btn" data-st="Busy" type="button"><span class="sd bs"></span>Busy</button>
+        <button class="st-btn" data-st="Offline" type="button"><span class="sd of"></span>Offline</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="mini-btn" id="installBtn" type="button">Install as an app</button>
+      </div>
+    </div>
+
+    <div class="sec-label">Channels</div>
+    <div id="chanList"></div>
+
+    <p class="foot">
+      OpenChannel is a feedback prototype, not a finished product. <b>Not for life-safety or emergency use</b> — in a real emergency call 911.
+      Channels only; there are no direct messages. Voice goes peer-to-peer through the free PeerJS cloud relay; nothing is recorded or stored on a server.
+      Voice history is kept on your own device only. Free to run: static page + free signaling.
+    </p>
   </div>
 
-  <!-- RADIO -->
-  <div id="radioUI" style="display:none">
-    <div class="banner" id="oemBanner" style="display:none">
+  <!-- ============ CHANNEL ============ -->
+  <div id="chanView" class="hidden">
+    <div class="chan-head">
+      <button class="back-btn" id="backBtn" type="button">‹ Channels</button>
+      <span class="chan-title" id="chanTitle">—<span class="lockmark hidden" id="lockMark">LOCKED</span></span>
+    </div>
+
+    <div class="banner hidden" id="oemBanner">
       OEM DRILL — TRAINING USE ONLY. NOT FOR LIFE-SAFETY TRAFFIC.
       <small>This channel is for practice drills only. In a real emergency call 911.</small>
     </div>
-    <div class="card">
-      <div class="lcd">
-        <div class="l1"><span class="led" id="led"></span><span id="lcdChan">—</span></div>
-        <div class="l2" id="lcdStatus">connecting…</div>
-      </div>
-      <div class="ptt-row">
-        <button class="ptt" id="ptt" type="button">PUSH<br>TO<br>TALK</button>
-        <div class="ptt-hint" id="pttHint">Hold the button (or spacebar) to transmit.</div>
-      </div>
-      <div class="row">
-        <button class="mini-btn" id="dspBtn" type="button">Dispatcher mode: off</button>
-        <button class="mini-btn" id="leaveBtn" type="button">Leave channel</button>
-        <span class="locked-note" id="lockNote" style="display:none">CHANNEL LOCKED BY OWNER — only the owner can transmit</span>
+
+    <div class="lcd"><span class="led" id="led"></span><span id="lcdStatus">connecting…</span></div>
+
+    <div class="feed" id="feed"></div>
+
+    <div class="talkbar">
+      <button class="ptt" id="ptt" type="button">TALK</button>
+      <div class="ptt-hint" id="pttHint">Hold to talk (or hold spacebar).</div>
+      <div class="talk-tools">
+        <button class="mini-btn" id="codesBtn" type="button">10-codes</button>
+        <button class="mini-btn" id="usersBtn" type="button">People (1)</button>
+        <button class="mini-btn" id="dspBtn" type="button">Dispatcher: off</button>
+        <button class="mini-btn" id="fxBtn" type="button">Radio FX: on</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="sec-label">10-codes</div>
+    <div class="card hidden" id="codesPanel">
       <div class="codes" id="codesGrid"></div>
-      <div class="sec-label">Net log</div>
-      <div class="logbox" id="log"></div>
     </div>
 
-    <div class="card">
-      <div class="sec-label">On this channel</div>
-      <div class="users" id="users"></div>
+    <div class="card users hidden" id="usersPanel">
+      <div class="sec-label" style="margin-top:0">On this channel</div>
+      <div id="users"></div>
     </div>
 
     <!-- OWNER PANEL -->
-    <div class="card admin-panel admin-only" id="adminPanel">
+    <div class="card admin-panel admin-only hidden" id="adminPanel">
       <h2>Owner controls</h2>
       <div class="row">
         <button class="mini-btn" id="lockBtn" type="button">Lock channel: off</button>
-        <button class="mini-btn" id="standbyBtn" type="button">Send “stand by” to channel</button>
+        <button class="mini-btn" id="standbyBtn" type="button">Send “stand by”</button>
       </div>
       <div class="sec-label">Ban list (this channel)</div>
       <div id="banList"><span style="color:var(--dim)">No bans.</span></div>
       <div class="sec-label">Report queue</div>
       <div id="reportQueue"><span style="color:var(--dim)">No reports.</span></div>
-      <div class="row"><button class="danger" id="clearReports" type="button">Clear queue</button></div>
+      <div class="row" style="margin-top:8px"><button class="danger" id="clearReports" type="button">Clear queue</button></div>
     </div>
-  </div>
 
-  <p class="foot">
-    OpenChannel is a feedback prototype, not a finished product. <b>Not for life-safety or emergency use</b> — in a real emergency call 911.
-    Channels only; there are no direct messages. Voice goes peer-to-peer through the free PeerJS cloud relay; nothing is recorded or stored on a server.
-    Mute and report tools are in the user list. Free to run: static page + free signaling.
-  </p>
+    <p class="foot">
+      Prototype. <b>Not for life-safety or emergency use</b> — call 911 in a real emergency.
+      Voice history below is stored on this device only.
+    </p>
+  </div>
 </div>
 
 <dialog id="ownerDlg">
@@ -177,7 +226,7 @@
   <p class="sub">Enter the owner code to open moderation controls on this device.</p>
   <input type="text" id="ownerCode" placeholder="Owner code" autocomplete="off">
   <div class="row" style="margin-top:12px">
-    <button class="big-btn" id="ownerGo" type="button" style="padding:10px">Unlock</button>
+    <button class="mini-btn" id="ownerGo" type="button" style="padding:10px 18px">Unlock</button>
   </div>
   <p class="sub" id="ownerMsg"></p>
 </dialog>
@@ -191,7 +240,7 @@
 /* ---------- config ---------- */
 var APP='oc27x';
 var APP_KEY='openchannel-proto-k7f3a9d2'; /* prototype-grade signing key (public source; real enforcement needs the backend) */
-var OWNER_HASH='910a0126531cab09f7db7dcd2eb5332c0ac34aeb4d35347369021692652b2c89'; /* sha256 of the owner code; the code itself is never stored here */
+var OWNER_HASH='910a0126531cab09f7db7dcd2eb5332c0ac34aeb4d35347369021692652b2c89';
 var SLOTS=12;
 var CHANNELS=[
   {id:'dispatch', name:'Dispatch', num:'CH 1'},
@@ -201,34 +250,86 @@ var CHANNELS=[
 ];
 var CODES=[['10-4','Acknowledged'],['10-9','Repeat last'],['10-20','Your location?'],['10-22','Disregard'],['10-8','In service'],['10-7','Out of service']];
 var BAD=['fuck','shit','bitch','nigger','faggot','cunt','rape','kys'];
+var MAX_HIST=30, MAX_REC_MS=120000;
 
 /* ---------- state ---------- */
-var peer=null, mySlot=0, myName='', channel=null;
-var conns=new Map();      /* peerId -> {conn,name,muted,audioEl,talking,reports} */
+var peer=null, mySlot=0, myName='', myStatus='Available', channel=null;
+var conns=new Map();
 var myCalls=[];
 var micStream=null, micFailed=false;
 var tx=false, floorHolder=null, floorName='', floorIsDsp=false;
 var dispatcher=false, locked=false, ownerOnline=false, ownerPeer=null;
 var isOwner=false, offline=false;
-var bans=[];              /* lowercased names */
-var reports=[];           /* {time,from,reason,target} */
+var bans=[], reports=[];
 var adminMutedUntil=0;
+var liveFeedRow=null;      /* feed row for the current incoming transmission */
+var txFeedRow=null;
+var rec=null, recStart=0, recFrom='', recOwn=false;
+var radioFxOn=load('radiofx',true);
 
 /* ---------- dom ---------- */
 function el(id){return document.getElementById(id);}
-var joinCard=el('joinCard'), radioUI=el('radioUI'), nickInput=el('nickInput'), chanGrid=el('chanGrid'),
-    joinBtn=el('joinBtn'), joinStatus=el('joinStatus'), lcdChan=el('lcdChan'), lcdStatus=el('lcdStatus'),
-    led=el('led'), ptt=el('ptt'), pttHint=el('pttHint'), dspBtn=el('dspBtn'), leaveBtn=el('leaveBtn'),
-    lockNote=el('lockNote'), codesGrid=el('codesGrid'), logBox=el('log'), usersBox=el('users'),
-    oemBanner=el('oemBanner'), toastBox=el('toast'), gearBtn=el('gearBtn'),
-    ownerDlg=el('ownerDlg'), ownerCode=el('ownerCode'), ownerGo=el('ownerGo'), ownerMsg=el('ownerMsg'),
-    lockBtn=el('lockBtn'), standbyBtn=el('standbyBtn'), banList=el('banList'), reportQueue=el('reportQueue'),
-    clearReports=el('clearReports');
-var pickedChan=null;
+var homeView=el('homeView'), chanView=el('chanView'), nickInput=el('nickInput'), chanList=el('chanList'),
+    backBtn=el('backBtn'), chanTitle=el('chanTitle'), lockMark=el('lockMark'), oemBanner=el('oemBanner'),
+    led=el('led'), lcdStatus=el('lcdStatus'), feed=el('feed'), ptt=el('ptt'), pttHint=el('pttHint'),
+    codesBtn=el('codesBtn'), usersBtn=el('usersBtn'), dspBtn=el('dspBtn'), codesPanel=el('codesPanel'),
+    usersPanel=el('usersPanel'), codesGrid=el('codesGrid'), usersBox=el('users'),
+    gearBtn=el('gearBtn'), ownerDlg=el('ownerDlg'), ownerCode=el('ownerCode'), ownerGo=el('ownerGo'),
+    ownerMsg=el('ownerMsg'), lockBtn=el('lockBtn'), standbyBtn=el('standbyBtn'), banList=el('banList'),
+    reportQueue=el('reportQueue'), clearReports=el('clearReports'), adminPanel=el('adminPanel'),
+    toastBox=el('toast'), installBtn=el('installBtn');
 
 /* ---------- storage ---------- */
 function save(k,v){ try{ localStorage.setItem('oc27:'+k, JSON.stringify(v)); }catch(e){} }
 function load(k,d){ try{ var v=localStorage.getItem('oc27:'+k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+
+/* ---------- history store (IndexedDB, memory fallback) ---------- */
+var db=null, memHist=[];
+function dbOpen(){
+  return new Promise(function(res){
+    try{
+      var rq=indexedDB.open('openchannel',1);
+      rq.onupgradeneeded=function(){ var d=rq.result; var s=d.createObjectStore('history',{keyPath:'id',autoIncrement:true}); s.createIndex('byChan','channel'); };
+      rq.onsuccess=function(){ db=rq.result; res(true); };
+      rq.onerror=function(){ res(false); };
+    }catch(e){ res(false); }
+  });
+}
+function histAdd(item){
+  return new Promise(function(res){
+    if(!db){ memHist.push(item); res(); return; }
+    try{
+      var txd=db.transaction('history','readwrite'), st=txd.objectStore('history');
+      st.add(item);
+      txd.oncomplete=function(){
+        /* trim to MAX_HIST per channel */
+        var idx=st.index('byChan'), keys=[];
+        idx.openKeyCursor(IDBKeyRange.only(item.channel)).onsuccess=function(ev){
+          var c=ev.target.result;
+          if(c){ keys.push(c.primaryKey); c.continue(); }
+          else{
+            var extra=keys.length-MAX_HIST;
+            if(extra>0){ keys.slice(0,extra).forEach(function(k){ st.delete(k); }); }
+            res();
+          }
+        };
+      };
+      txd.onerror=function(){ res(); };
+    }catch(e){ res(); }
+  });
+}
+function histGet(chanId){
+  return new Promise(function(res){
+    if(!db){ res(memHist.filter(function(h){return h.channel===chanId;})); return; }
+    try{
+      var out=[], idx=db.transaction('history').objectStore('history').index('byChan');
+      idx.openCursor(IDBKeyRange.only(chanId)).onsuccess=function(ev){
+        var c=ev.target.result;
+        if(c){ out.push(c.value); c.continue(); } else res(out);
+      };
+    }catch(e){ res([]); }
+  });
+}
 
 /* ---------- crypto ---------- */
 function sha256hex(s){
@@ -257,76 +358,166 @@ function beep(freq,dur){
   o.connect(g); g.connect(ctx.destination); o.start();
   setTimeout(function(){ o.stop(); }, dur||90);
 }
+function keyChirp(){ /* talk-permit chirp on key-down */
+  if(!radioFxOn) return;
+  var ctx=ac(); if(!ctx) return;
+  var o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sine'; o.frequency.value=950; g.gain.value=0.05;
+  o.connect(g); g.connect(ctx.destination); o.start();
+  o.frequency.setValueAtTime(950, ctx.currentTime);
+  o.frequency.linearRampToValueAtTime(1400, ctx.currentTime+0.05);
+  setTimeout(function(){ o.stop(); }, 70);
+}
+function rogerBeep(){ /* double blip when the other unit keys up */
+  if(!radioFxOn) return;
+  beep(1450,65); setTimeout(function(){ beep(1050,85); }, 90);
+}
+function makeDistortionCurve(k){
+  var n=1024, c=new Float32Array(n);
+  for(var i=0;i<n;i++){ var x=i*2/n-1; c[i]=(1+k)*x/(1+k*Math.abs(x)); }
+  return c;
+}
+/* static underlay while a unit is on air */
+var staticSrc=null, staticGain=null;
+function startStatic(){
+  if(!radioFxOn) return;
+  var ctx=ac(); if(!ctx) return;
+  stopStatic();
+  var dur=2, buf=ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate), d=buf.getChannelData(0);
+  for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  var src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+  var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
+  var hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=250;
+  var g=ctx.createGain(); g.gain.value=0;
+  src.connect(lp); lp.connect(hp); hp.connect(g); g.connect(ctx.destination);
+  src.start();
+  g.gain.setTargetAtTime(0.04, ctx.currentTime, 0.08);
+  staticSrc=src; staticGain=g;
+}
+function stopStatic(){
+  if(staticGain){ try{ staticGain.gain.setTargetAtTime(0, staticGain.context.currentTime, 0.05); }catch(e){} }
+  if(staticSrc){ var s=staticSrc; setTimeout(function(){ try{s.stop();}catch(e){} },300); staticSrc=null; staticGain=null; }
+}
 
 /* ---------- ui helpers ---------- */
 function setStatus(s){ lcdStatus.textContent=s; }
 function toast(s){ toastBox.textContent=s; toastBox.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(function(){toastBox.style.display='none';},3200); }
-function logLine(kind, who, text){
-  var t=new Date().toTimeString().slice(0,8);
-  var div=document.createElement('div');
-  var cls=kind==='sys'?'sys':(who===myName?'me':'');
-  div.innerHTML='<span class="t">'+t+'</span>'+(who?'<b class="'+cls+'"></b> ':'')+'<span></span>';
-  if(who) div.querySelector('b').textContent=who+':';
-  div.querySelector('span:last-child').textContent=text;
-  logBox.appendChild(div); logBox.scrollTop=logBox.scrollHeight;
+function fmtTime(ts){ return new Date(ts||Date.now()).toTimeString().slice(0,5); }
+function fmtDur(ms){ var s=Math.max(1,Math.round(ms/1000)); return '0:'+('0'+s).slice(-2); }
+function scrollFeed(){ feed.scrollTop=feed.scrollHeight; }
+function feedSys(html){
+  var d=document.createElement('div'); d.className='fsys'; d.innerHTML=html;
+  feed.appendChild(d); scrollFeed();
 }
-function logSys(t){ logLine('sys',null,t); }
+function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function waveBars(){
+  var w='';
+  for(var i=0;i<18;i++){ w+='<i style="height:'+(4+Math.round(Math.random()*16))+'px"></i>'; }
+  return w;
+}
+function feedVoice(item){
+  /* item: {name, own, ts, durMs, blob|null, live} */
+  var d=document.createElement('div'); d.className='fmsg'+(item.live?' live':'');
+  if(item.live){
+    d.innerHTML='<span class="eq">LIVE</span><div style="flex:1"><div class="who"></div><div class="meta">on air now</div></div><div class="wave">'+waveBars()+'</div>';
+    d.querySelector('.who').textContent=item.name;
+  } else {
+    d.innerHTML='<button class="play" type="button" '+(item.blob?'':'disabled')+'>▶</button><div style="flex:1"><div class="who"></div><div class="meta">'+fmtTime(item.ts)+' · '+fmtDur(item.durMs)+(item.blob?'':' · not recorded')+'</div></div><div class="wave">'+waveBars()+'</div>';
+    d.querySelector('.who').textContent=item.name+(item.own?' (you)':'');
+    if(item.blob){
+      var btn=d.querySelector('.play');
+      btn.onclick=function(){
+        var a=new Audio(URL.createObjectURL(item.blob));
+        a.onended=function(){ URL.revokeObjectURL(a.src); };
+        a.play().catch(function(){ toast('Replay not supported on this browser'); });
+      };
+    }
+  }
+  feed.appendChild(d); scrollFeed();
+  return d;
+}
 
-/* ---------- join screen ---------- */
+/* ---------- home ---------- */
 CHANNELS.forEach(function(c){
-  var b=document.createElement('button'); b.type='button'; b.className='chan-btn';
-  b.innerHTML='<div class="n"></div><div class="d"></div>';
-  b.querySelector('.n').textContent=c.num+' · '+c.name;
-  b.querySelector('.d').textContent=c.training?'Practice net for OEM drills':'Open talk channel';
-  if(c.training){ var tag=document.createElement('span'); tag.className='tag'; tag.textContent='TRAINING ONLY'; b.querySelector('.n').appendChild(tag); }
-  b.onclick=function(){ pickedChan=c; Array.prototype.forEach.call(chanGrid.children,function(x){x.style.borderColor='';}); b.style.borderColor='var(--accent)'; joinBtn.disabled=!nickInput.value.trim(); };
-  chanGrid.appendChild(b);
+  var b=document.createElement('button'); b.type='button'; b.className='chan-item';
+  b.innerHTML='<span class="ci">'+c.num.slice(3)+'</span><span><span class="cn"></span>'+(c.training?'<span class="tag">TRAINING ONLY</span>':'')+'<br><span class="cd"></span></span><span class="arr">›</span>';
+  b.querySelector('.cn').textContent=c.num+' · '+c.name;
+  b.querySelector('.cd').textContent=c.training?'Practice net for OEM drills':'Open talk channel';
+  b.onclick=function(){ startJoin(c); };
+  chanList.appendChild(b);
 });
-nickInput.addEventListener('input', function(){ joinBtn.disabled=!(pickedChan&&nickInput.value.trim()); });
 nickInput.value=load('nick','');
-if(nickInput.value&&pickedChan) joinBtn.disabled=false;
-joinBtn.onclick=function(){
-  myName=nickInput.value.trim().slice(0,20)||('Unit '+Math.floor(Math.random()*90+10));
-  save('nick',myName);
-  joinBtn.disabled=true; joinStatus.textContent='Finding an open slot…';
-  join(pickedChan, 1);
-};
+nickInput.addEventListener('input', function(){ myName=nickInput.value.trim().slice(0,20); save('nick',myName); });
+myStatus=load('status','Available');
+Array.prototype.forEach.call(document.querySelectorAll('.st-btn'), function(b){
+  if(b.dataset.st===myStatus) markStatus(b);
+  b.onclick=function(){ markStatus(b); myStatus=b.dataset.st; save('status',myStatus); broadcast({t:'status',status:myStatus,name:myName}); };
+});
+function markStatus(btn){
+  Array.prototype.forEach.call(document.querySelectorAll('.st-btn'), function(x){x.classList.remove('sel');});
+  btn.classList.add('sel');
+}
 CODES.forEach(function(pair){
   var b=document.createElement('button'); b.type='button'; b.className='code-btn';
   b.innerHTML='<b></b> <span></span>'; b.querySelector('b').textContent=pair[0]; b.querySelector('span').textContent=pair[1];
   b.onclick=function(){ sendCode(pair[0],pair[1]); };
   codesGrid.appendChild(b);
 });
+codesBtn.onclick=function(){ codesPanel.classList.toggle('hidden'); };
+usersBtn.onclick=function(){ usersPanel.classList.toggle('hidden'); if(isOwner) adminPanel.classList.toggle('hidden', !usersPanel.classList.contains('hidden')?false:true); };
 
 /* ---------- peer lifecycle ---------- */
 function slotId(i){ return APP+'-'+channel.id+'-s'+i; }
 
-function join(chan, slot){
+function startJoin(chan){
+  myName=(nickInput.value.trim().slice(0,20))||('Unit '+Math.floor(Math.random()*90+10));
+  nickInput.value=myName; save('nick',myName);
   channel=chan;
+  homeView.classList.add('hidden'); chanView.classList.remove('hidden');
+  chanTitle.firstChild.textContent=chan.num+' · '+chan.name;
+  oemBanner.classList.toggle('hidden', !chan.training);
+  feed.innerHTML='';
+  setStatus('finding an open slot…');
+  loadFeed(chan.id);
+  join(1);
+}
+function loadFeed(chanId){
+  histGet(chanId).then(function(items){
+    items.slice(-MAX_HIST).forEach(function(it){ it.blob=blobFromStored(it); feedVoice(it); });
+  });
+}
+function blobFromStored(it){ return it.blob||null; }
+
+function join(slot){
   if(typeof Peer==='undefined'){ enterOffline(); return; }
-  if(slot>SLOTS){ joinStatus.textContent='Channel is full right now — try another channel.'; joinBtn.disabled=false; return; }
+  if(slot>SLOTS){ setStatus('channel full — try another'); return; }
   var p, settled=false;
   try{ p=new Peer(slotId(slot)); }catch(e){ enterOffline(); return; }
-  var to=setTimeout(function(){ if(!settled){ settled=true; try{p.destroy();}catch(e){} join(chan,slot+1); } },4500);
+  var to=setTimeout(function(){ if(!settled){ settled=true; try{p.destroy();}catch(e){} join(slot+1); } },4500);
   p.on('open', function(){
     if(settled) return; settled=true; clearTimeout(to);
-    peer=p; mySlot=slot; wirePeer(); enterRadio(); scan();
+    peer=p; mySlot=slot; wirePeer();
+    bans=load('bans:'+channel.id,[]);
+    feedSys('You joined <b>'+esc(channel.name)+'</b> as <b>'+esc(myName)+'</b>'+(offline?' (offline demo)':''));
+    refreshFloorUI(); renderUsers();
+    if(isOwner){ announceOwner(); renderAdmin(); }
+    scan();
     setInterval(scan,15000);
   });
   p.on('error', function(e){
     if(settled) return;
-    if(e.type==='unavailable-id'){ settled=true; clearTimeout(to); try{p.destroy();}catch(x){} join(chan,slot+1); }
+    if(e.type==='unavailable-id'){ settled=true; clearTimeout(to); try{p.destroy();}catch(x){} join(slot+1); }
     else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){ settled=true; clearTimeout(to); try{p.destroy();}catch(x){} enterOffline(); }
   });
 }
 
 function wirePeer(){
-  peer.on('error', function(e){ if(e.type!=='peer-unavailable') logSys('net: '+e.type); });
+  peer.on('error', function(e){ if(e.type!=='peer-unavailable') feedSys('net: '+esc(e.type)); });
   peer.on('connection', function(conn){ setupConn(conn); });
   peer.on('call', function(call){
     try{ call.answer(); }catch(e){}
-    call.on('stream', function(rs){ playStream(call.peer, rs); });
-    call.on('close', function(){ stopStream(call.peer); });
+    call.on('stream', function(rs){ playStream(call.peer, rs); startRec(rs, call.peer); });
+    call.on('close', function(){ stopStream(call.peer); stopRec(); });
     call.on('error', function(){});
   });
   peer.on('disconnected', function(){ try{ peer.reconnect(); }catch(e){} });
@@ -338,44 +529,42 @@ function scan(){
     if(i===mySlot) continue;
     var id=slotId(i);
     if(conns.has(id)) continue;
-    try{
-      var conn=peer.connect(id,{metadata:{name:myName}});
-      setupConn(conn);
-    }catch(e){}
+    try{ setupConn(peer.connect(id,{metadata:{name:myName,status:myStatus}})); }catch(e){}
   }
 }
 
 function setupConn(conn){
   conn.on('open', function(){
     var nm=(conn.metadata&&conn.metadata.name)||'Unit';
-    conns.set(conn.peer,{conn:conn,name:nm,muted:false,audioEl:null,talking:false,reports:0});
-    try{ conn.send({t:'hello',name:myName,dsp:dispatcher}); }catch(e){}
+    conns.set(conn.peer,{conn:conn,name:nm,status:(conn.metadata&&conn.metadata.status)||'Available',muted:false,audioEl:null,talking:false});
+    try{ conn.send({t:'hello',name:myName,status:myStatus,dsp:dispatcher}); }catch(e){}
     renderUsers();
   });
   conn.on('data', function(d){ handleData(conn.peer,d); });
   conn.on('close', function(){
     var u=conns.get(conn.peer);
-    if(u){ logSys(u.name+' left the net'); }
+    if(u){ feedSys('<b>'+esc(u.name)+'</b> left the net'); }
     stopStream(conn.peer); conns.delete(conn.peer);
-    if(floorHolder===conn.peer){ floorHolder=null; floorName=''; }
+    if(floorHolder===conn.peer){ floorHolder=null; floorName=''; endLiveRow(); }
     refreshFloorUI(); renderUsers();
   });
   conn.on('error', function(){});
 }
 
-function broadcast(obj){
-  conns.forEach(function(u){ try{ u.conn.send(obj); }catch(e){} });
-}
+function broadcast(obj){ conns.forEach(function(u){ try{ u.conn.send(obj); }catch(e){} }); }
 
 function handleData(from,d){
   if(!d||typeof d!=='object') return;
   var u=conns.get(from);
   if(d.t==='hello'){
-    if(u){ u.name=d.name||u.name; u.dsp=!!d.dsp; }
+    if(u){ u.name=d.name||u.name; u.dsp=!!d.dsp; u.status=d.status||u.status; }
     if(d.name && bans.indexOf(String(d.name).toLowerCase())>=0 && isOwner){ kickPeer(from,d.name); }
     try{ var c=u&&u.conn; c&&c.send({t:'state',locked:locked,bans:bans,owner:isOwner}); }catch(e){}
-    if(d.name&&u){ checkWords(d.name,u); logSys(u.name+' joined the net'); }
+    if(d.name&&u){ checkWords(d.name); feedSys('<b>'+esc(u.name)+'</b> joined the net'); }
     renderUsers();
+  }
+  else if(d.t==='status'){
+    if(u){ u.status=d.status||u.status; renderUsers(); }
   }
   else if(d.t==='state'){
     locked=!!d.locked; if(Array.isArray(d.bans)) mergeBans(d.bans);
@@ -385,18 +574,18 @@ function handleData(from,d){
   else if(d.t==='code'){
     if(u&&u.muted) return;
     beep(1500,70);
-    logLine('msg', d.name||'Unit', d.code+' — '+d.label);
+    feedSys('<b>'+esc(d.name||'Unit')+'</b>: '+esc(d.code)+' — '+esc(d.label));
   }
   else if(d.t==='floor'){
     if(d.on){
-      if(tx&&d.dsp&&!dispatcher){ releasePTT(true); logSys('Dispatcher took the net'); }
+      if(tx&&d.dsp&&!dispatcher){ releasePTT(true); feedSys('Dispatcher took the net'); }
       floorHolder=from; floorName=d.name||'Unit'; floorIsDsp=!!d.dsp;
       if(u){u.talking=true;}
-      squelch(true); refreshFloorUI(); renderUsers();
+      squelch(true); startStatic(); startLiveRow(floorName); refreshFloorUI(); renderUsers();
     } else {
       if(u){u.talking=false;}
       if(floorHolder===from){ floorHolder=null; floorName=''; floorIsDsp=false; }
-      squelch(false); refreshFloorUI(); renderUsers();
+      stopStatic(); squelch(false); rogerBeep(); stopRec(); endLiveRow(); refreshFloorUI(); renderUsers();
     }
   }
   else if(d.t==='owner'){
@@ -412,24 +601,61 @@ function handleData(from,d){
     }
   }
   else if(d.t==='chat-sys'){
-    beep(1200,60); logSys(d.text||'');
+    beep(1200,60); feedSys(esc(d.text||''));
   }
+}
+
+/* ---------- recording (device-local voice history) ---------- */
+function pickMime(){
+  if(!window.MediaRecorder) return '';
+  var c=['audio/webm;codecs=opus','audio/webm','audio/mp4'];
+  for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+  return '';
+}
+function startRec(stream, fromPeer){
+  stopRec(true);
+  var mime=pickMime();
+  var fromName=fromPeer?(conns.get(fromPeer)?conns.get(fromPeer).name:'Unit'):myName;
+  if(!mime){ recOwn=false; rec=null; recFrom=fromName; recStart=Date.now(); return; } /* untracked, will save as not-recorded */
+  try{
+    var chunks=[];
+    rec=new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size) chunks.push(e.data); };
+    rec.onstop=function(){
+      var dur=Date.now()-recStart;
+      if(dur<400) return;
+      var blob=chunks.length?new Blob(chunks,{type:mime||'audio/webm'}):null;
+      var item={channel:channel.id, name:recFrom, own:recOwn, ts:Date.now(), durMs:dur, blob:blob};
+      histAdd(item);
+      feedVoice(item);
+    };
+    recFrom=fromName; recOwn=!fromPeer; recStart=Date.now();
+    rec.start(500);
+    setTimeout(function(){ if(rec&&rec.state==='recording') stopRec(); }, MAX_REC_MS);
+  }catch(e){ rec=null; recFrom=fromName; recStart=Date.now(); }
+}
+function stopRec(silent){
+  if(rec&&rec.state!=='inactive'){ try{ rec.stop(); }catch(e){} }
+  rec=null;
 }
 
 /* ---------- floor / TX ---------- */
 function refreshFloorUI(){
-  if(tx){ led.className='led tx'; setStatus('TRANSMITTING — '+channel.name); ptt.classList.add('tx'); return; }
+  if(tx){ led.className='led tx'; setStatus('TRANSMITTING'); ptt.classList.add('tx'); return; }
   ptt.classList.remove('tx');
-  if(floorHolder){ led.className='led rx'; setStatus('RX — '+floorName+(floorIsDsp?' (dispatcher)':'')+' is talking'); }
-  else{ led.className='led'; setStatus(locked?('LOCKED — '+channel.name):('ON NET — '+channel.name+' — '+(conns.size+1)+' on channel')); }
+  if(floorHolder){ led.className='led rx'; setStatus(floorName+(floorIsDsp?' (dispatcher)':'')+' is talking'); }
+  else{ led.className='led'; setStatus(locked?'CHANNEL LOCKED':'ON NET — '+(conns.size+1)+' here'); }
   var busy=!!floorHolder||locked||(Date.now()<adminMutedUntil);
   ptt.disabled=busy&&!tx;
+  lockMark.classList.toggle('hidden', !locked);
   if(Date.now()<adminMutedUntil) pttHint.textContent='You were muted by the owner (10 min).';
-  else if(locked) pttHint.textContent='Channel locked by owner. Listen only.';
+  else if(locked&&!isOwner) pttHint.textContent='Channel locked by owner. Listen only.';
   else if(floorHolder) pttHint.textContent=floorName+' is talking. Wait for the click.';
-  else pttHint.textContent='Hold the button (or spacebar) to transmit.';
-  lockNote.style.display=(locked&&!isOwner)?'inline':'none';
+  else pttHint.textContent='Hold to talk (or hold spacebar).';
+  usersBtn.textContent='People ('+(conns.size+1)+')';
 }
+function startLiveRow(name){ endLiveRow(); liveFeedRow=feedVoice({name:name,live:true}); }
+function endLiveRow(){ if(liveFeedRow){ liveFeedRow.remove(); liveFeedRow=null; } }
 
 function pressPTT(){
   if(tx) return;
@@ -451,12 +677,12 @@ function pressPTT(){
 }
 function startTx(){
   tx=true; floorHolder=peer?peer.id:null; floorName=myName;
-  squelch(true);
+  squelch(true); keyChirp();
   broadcast({t:'floor',on:true,name:myName,dsp:dispatcher});
+  txFeedRow=feedVoice({name:myName+' (you)',live:true});
+  startRec(micStream, null);
   myCalls=[];
-  conns.forEach(function(u,id){
-    try{ myCalls.push(peer.call(id,micStream)); }catch(e){}
-  });
+  conns.forEach(function(u,id){ try{ myCalls.push(peer.call(id,micStream)); }catch(e){} });
   refreshFloorUI();
 }
 function releasePTT(yielded){
@@ -464,6 +690,8 @@ function releasePTT(yielded){
   tx=false; floorHolder=null; floorName='';
   squelch(false);
   broadcast({t:'floor',on:false,name:myName});
+  if(txFeedRow){ txFeedRow.remove(); txFeedRow=null; }
+  stopRec();
   myCalls.forEach(function(c){ try{c.close();}catch(e){} });
   myCalls=[];
   refreshFloorUI();
@@ -474,12 +702,26 @@ ptt.addEventListener('touchstart',function(e){e.preventDefault();pressPTT();},{p
 ptt.addEventListener('touchend',function(e){e.preventDefault();releasePTT();});
 ptt.addEventListener('contextmenu',function(e){e.preventDefault();});
 document.addEventListener('keydown',function(e){
-  if(e.code==='Space'&&!e.repeat&&radioUI.style.display!=='none'&&document.activeElement!==nickInput&&document.activeElement!==ownerCode){ e.preventDefault(); pressPTT(); }
+  if(e.code==='Space'&&!e.repeat&&!chanView.classList.contains('hidden')&&document.activeElement!==nickInput&&document.activeElement!==ownerCode){ e.preventDefault(); pressPTT(); }
 });
 document.addEventListener('keyup',function(e){ if(e.code==='Space'){ releasePTT(); } });
 
 function playStream(pid,rs){
   var u=conns.get(pid);
+  var ctx=ac();
+  if(ctx&&radioFxOn){
+    /* radio-filtered voice: band-limit + soft distortion, like a real handset */
+    try{
+      var src=ctx.createMediaStreamSource(rs);
+      var hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=350;
+      var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2700;
+      var ws=ctx.createWaveShaper(); ws.curve=makeDistortionCurve(6); ws.oversample='2x';
+      var g=ctx.createGain(); g.gain.value=(u&&u.muted)?0:1;
+      src.connect(hp); hp.connect(lp); lp.connect(ws); ws.connect(g); g.connect(ctx.destination);
+      if(u){ u.audioGain=g; u.audioNodes=[src,hp,lp,ws,g]; }
+      return;
+    }catch(e){}
+  }
   var a=document.createElement('audio'); a.autoplay=true; a.playsInline=true;
   a.srcObject=rs; a.muted=!!(u&&u.muted);
   document.body.appendChild(a);
@@ -488,6 +730,7 @@ function playStream(pid,rs){
 }
 function stopStream(pid){
   var u=conns.get(pid);
+  if(u&&u.audioNodes){ u.audioNodes.forEach(function(n){ try{n.disconnect();}catch(e){} }); u.audioNodes=null; }
   if(u&&u.audioEl){ try{u.audioEl.srcObject=null; u.audioEl.remove();}catch(e){} u.audioEl=null; }
 }
 
@@ -495,22 +738,27 @@ function stopStream(pid){
 function sendCode(code,label){
   broadcast({t:'code',code:code,label:label,name:myName});
   beep(1500,70);
-  logLine('msg',myName,code+' — '+label);
+  feedSys('<b>'+esc(myName)+'</b>: '+esc(code)+' — '+esc(label));
 }
 
-/* ---------- users / moderation (every user) ---------- */
+/* ---------- users / moderation ---------- */
+function statusDot(st){
+  var c=st==='Busy'?'var(--amber)':(st==='Offline'?'#5a6672':'var(--lcd-fg)');
+  return '<span class="sdot" style="background:'+c+'"></span>';
+}
 function renderUsers(){
   usersBox.innerHTML='';
   var me=document.createElement('div'); me.className='user-row';
-  me.innerHTML='<span class="nm"></span>'+(dispatcher?'<span class="badge dsp">DISPATCH</span>':'')+(isOwner?'<span class="badge own">OWNER</span>':'')+'<span class="badge">YOU</span>';
+  me.innerHTML=statusDot(myStatus)+'<span class="nm"></span>'+(dispatcher?'<span class="badge dsp">DISPATCH</span>':'')+(isOwner?'<span class="badge own">OWNER</span>':'')+'<span class="badge">YOU</span>';
   me.querySelector('.nm').textContent=myName;
   usersBox.appendChild(me);
   conns.forEach(function(u,id){
     var r=document.createElement('div'); r.className='user-row';
+    r.insertAdjacentHTML('beforeend',statusDot(u.status));
     var nm=document.createElement('span'); nm.className='nm'+(u.talking?' talking':''); nm.textContent=u.name+(u.talking?' · on air':''); r.appendChild(nm);
     if(u.dsp){ var b=document.createElement('span'); b.className='badge dsp'; b.textContent='DISPATCH'; r.appendChild(b); }
     var mb=document.createElement('button'); mb.type='button'; mb.textContent=u.muted?'Unmute':'Mute';
-    mb.onclick=function(){ u.muted=!u.muted; if(u.audioEl) u.audioEl.muted=u.muted; renderUsers(); toast(u.muted?('Muted '+u.name+' (only for you)'):('Unmuted '+u.name)); };
+    mb.onclick=function(){ u.muted=!u.muted; if(u.audioEl) u.audioEl.muted=u.muted; if(u.audioGain) u.audioGain.gain.value=u.muted?0:1; renderUsers(); toast(u.muted?('Muted '+u.name+' (only for you)'):('Unmuted '+u.name)); };
     r.appendChild(mb);
     var rb=document.createElement('button'); rb.type='button'; rb.textContent='Report';
     rb.onclick=function(){ openReport(u); };
@@ -525,8 +773,9 @@ function renderUsers(){
     }
     usersBox.appendChild(r);
   });
+  usersBtn.textContent='People ('+(conns.size+1)+')';
 }
-function checkWords(name,u){
+function checkWords(name){
   var low=String(name).toLowerCase();
   for(var i=0;i<BAD.length;i++){
     if(low.indexOf(BAD[i])>=0){
@@ -566,8 +815,9 @@ ownerGo.onclick=function(){
       gearBtn.classList.add('owner'); gearBtn.textContent='Owner ✓';
       if(ownerDlg.close) ownerDlg.close(); else ownerDlg.removeAttribute('open');
       reports=load('reports',[]);
-      bans=load('bans:'+(channel?channel.id:''),bans);
-      announceOwner(); renderUsers(); renderAdmin(); refreshFloorUI();
+      if(channel){ bans=load('bans:'+channel.id,bans); announceOwner(); }
+      renderUsers(); renderAdmin(); refreshFloorUI();
+      adminPanel.classList.remove('hidden');
       toast('Owner controls unlocked');
     } else {
       ownerMsg.textContent='Wrong code.';
@@ -589,7 +839,7 @@ function adminSend(cmd,target,value){
 }
 function applyAdmin(from,d){
   if(d.cmd==='lock'){
-    locked=!!d.value; logSys('Owner '+(locked?'locked':'unlocked')+' the channel');
+    locked=!!d.value; feedSys('Owner '+(locked?'locked':'unlocked')+' the channel');
     refreshFloorUI();
   }
   else if(d.cmd==='mute'&&d.target===(peer&&peer.id)){
@@ -597,29 +847,28 @@ function applyAdmin(from,d){
     toast('The owner muted you for 10 minutes');
   }
   else if(d.cmd==='kick'&&d.target===(peer&&peer.id)){
-    alertOrToast('You were removed from this channel by the owner');
+    toast('You were removed from this channel by the owner');
     leaveChannel();
   }
   else if(d.cmd==='ban'){
     if(d.targetName) mergeBans([d.targetName]);
-    if(d.target===(peer&&peer.id)){ alertOrToast('You were banned from this channel'); leaveChannel(); }
+    if(d.target===(peer&&peer.id)){ toast('You were banned from this channel'); leaveChannel(); }
     renderAdmin();
   }
   else if(d.cmd==='unban'&&d.targetName){
     bans=bans.filter(function(b){return b!==String(d.targetName).toLowerCase();});
-    if(isOwner) save('bans:'+channel.id,bans);
+    if(isOwner&&channel) save('bans:'+channel.id,bans);
     renderAdmin();
   }
 }
-function alertOrToast(s){ toast(s); logSys(s); }
 function kickPeer(id,name){
   adminSend('kick',id);
   var u=conns.get(id);
   setTimeout(function(){
     if(u){ try{u.conn.close();}catch(e){} }
-    conns.delete(id); renderUsers();
+    conns.delete(id); renderUsers(); refreshFloorUI();
   },500);
-  logSys((name||'A user')+' was kicked by the owner');
+  feedSys('<b>'+esc(name||'A user')+'</b> was kicked by the owner');
 }
 function banPeer(id,name){
   var low=String(name).toLowerCase();
@@ -629,9 +878,9 @@ function banPeer(id,name){
   var u=conns.get(id);
   setTimeout(function(){
     if(u){ try{u.conn.close();}catch(e){} }
-    conns.delete(id); renderUsers();
+    conns.delete(id); renderUsers(); refreshFloorUI();
   },500);
-  renderAdmin(); logSys(name+' was banned');
+  renderAdmin(); feedSys('<b>'+esc(name)+'</b> was banned');
 }
 function mergeBans(list){
   list.forEach(function(n){ var low=String(n).toLowerCase(); if(bans.indexOf(low)<0) bans.push(low); });
@@ -640,12 +889,12 @@ function mergeBans(list){
 lockBtn.onclick=function(){
   locked=!locked; adminSend('lock','',locked);
   lockBtn.textContent='Lock channel: '+(locked?'ON':'off');
-  logSys('Owner '+(locked?'locked':'unlocked')+' the channel');
+  feedSys('Owner '+(locked?'locked':'unlocked')+' the channel');
   refreshFloorUI();
 };
 standbyBtn.onclick=function(){
   broadcast({t:'chat-sys',text:'Net: all units stand by.'});
-  logSys('Net: all units stand by.');
+  feedSys('Net: all units stand by.');
 };
 clearReports.onclick=function(){ reports=[]; saveReports(); renderAdmin(); };
 function saveReports(){ save('reports',reports); }
@@ -678,46 +927,46 @@ function renderAdmin(){
 }
 
 /* ---------- enter/leave ---------- */
-function enterRadio(){
-  joinCard.style.display='none'; radioUI.style.display='block';
-  lcdChan.textContent=channel.num+' · '+channel.name.toUpperCase()+' — 146.520';
-  oemBanner.style.display=channel.training?'block':'none';
-  bans=load('bans:'+channel.id,[]);
-  logSys('You joined '+channel.name+' as '+myName+(offline?' (offline demo)':''));
-  refreshFloorUI(); renderUsers();
-  if(isOwner){ bans=load('bans:'+channel.id,bans); announceOwner(); renderAdmin(); }
-}
 function enterOffline(){
   offline=true;
-  channel=pickedChan;
-  enterRadio();
   setStatus('OFFLINE DEMO — signaling unreachable');
   ptt.disabled=true; pttHint.textContent='Offline demo: signaling server unreachable, listen-only.';
-  logSys('Signaling unreachable — showing offline demo');
+  feedSys('Signaling unreachable — showing offline demo');
 }
 function leaveChannel(){
   releasePTT();
+  stopRec(true);
   myCalls.forEach(function(c){try{c.close();}catch(e){}}); myCalls=[];
   conns.forEach(function(u){ try{u.conn.close();}catch(e){} stopStream(u.conn.peer); });
   conns.clear();
   if(peer){ try{peer.destroy();}catch(e){} peer=null; }
   tx=false; floorHolder=null; locked=false; ownerOnline=false; ownerPeer=null;
-  radioUI.style.display='none'; joinCard.style.display='block';
-  joinBtn.disabled=false; joinStatus.textContent='';
+  chanView.classList.add('hidden'); homeView.classList.remove('hidden');
+  codesPanel.classList.add('hidden'); usersPanel.classList.add('hidden'); adminPanel.classList.add('hidden');
 }
-leaveBtn.onclick=leaveChannel;
+backBtn.onclick=leaveChannel;
+var fxBtn=el('fxBtn');
+fxBtn.textContent='Radio FX: '+(radioFxOn?'on':'off');
+fxBtn.className='mini-btn'+(radioFxOn?' on':'');
+fxBtn.onclick=function(){
+  radioFxOn=!radioFxOn; save('radiofx',radioFxOn);
+  fxBtn.textContent='Radio FX: '+(radioFxOn?'on':'off');
+  fxBtn.className='mini-btn'+(radioFxOn?' on':'');
+  if(!radioFxOn) stopStatic();
+  toast('Radio sound effects '+(radioFxOn?'on (applies to the next transmission)':'off'));
+};
 dspBtn.onclick=function(){
   dispatcher=!dispatcher;
-  dspBtn.textContent='Dispatcher mode: '+(dispatcher?'ON':'off');
+  dspBtn.textContent='Dispatcher: '+(dispatcher?'ON':'off');
   dspBtn.className='mini-btn'+(dispatcher?' on':'');
-  broadcast({t:'hello',name:myName,dsp:dispatcher});
+  broadcast({t:'hello',name:myName,status:myStatus,dsp:dispatcher});
   renderUsers();
-  logSys('Dispatcher mode '+(dispatcher?'on':'off'));
+  feedSys('Dispatcher mode '+(dispatcher?'on':'off'));
 };
+
 /* ---------- install as app (PWA) ---------- */
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 var deferredInstall=null;
-var installBtn=el('installBtn');
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredInstall=e; });
 installBtn.onclick=function(){
   if(deferredInstall){ deferredInstall.prompt(); }
@@ -727,6 +976,7 @@ installBtn.onclick=function(){
   }
 };
 window.addEventListener('beforeunload',function(){ releasePTT(); });
+dbOpen();
 })();
 </script>
 </body>
