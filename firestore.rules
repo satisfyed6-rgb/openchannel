@@ -12,7 +12,8 @@ service cloud.firestore {
     && next.uses==i.uses+1 && next.lastUid==request.auth.uid;
   }
   match /appAdmins/{uid} { allow get: if signed() && request.auth.uid==uid; allow list,write: if false; }
-  match /usernames/{name} {
+  match /accountLibraries/{uid} { allow get,delete: if signed() && request.auth.uid==uid; allow list: if false; allow create,update: if signed() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['favorites','defaultChannel','version']) && request.resource.data.favorites is list && request.resource.data.favorites.size()<=60 && request.resource.data.version==1; match /channels/{id} { allow read,delete: if signed() && request.auth.uid==uid; allow create,update: if signed() && request.auth.uid==uid && request.resource.data.keys().hasOnly(['record']) && request.resource.data.record is map && request.resource.data.record.id is string && request.resource.data.record.name is string; } }
+  match /accountKeys/{uid}/devices/{keyid} { allow get: if signed(); allow list: if false; allow create: if signed() && request.auth.uid==uid && keyid.size()==64 && request.resource.data.keys().hasOnly(['pub']) && request.resource.data.pub.keys().hasOnly(['kty','crv','x','y','ext','key_ops']) && request.resource.data.pub.kty=='EC' && request.resource.data.pub.crv=='P-256' && request.resource.data.pub.x is string && request.resource.data.pub.x.size()==43 && request.resource.data.pub.y is string && request.resource.data.pub.y.size()==43; allow update,delete: if false; } match /usernames/{name} {
    allow get,list: if signed();
    allow create: if signed() && request.resource.data.uid==request.auth.uid && request.resource.data.keys().hasOnly(['uid','displayName','createdAt']);
    allow update,delete: if false;
